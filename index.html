@@ -456,7 +456,22 @@ function getDB() {
   s.alunas.sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
   return s;
 }
-function saveDB(db){try{localStorage.setItem('maluDB',JSON.stringify(db));}catch(e){}}
+function saveDB(db){
+  try{localStorage.setItem('maluDB',JSON.stringify(db));}
+  catch(e){
+    if(e.name==='QuotaExceededError'||e.code===22){
+      // Tenta remover fotos antigas para liberar espaço
+      let liberou=false;
+      for(let i=db.registros.length-1;i>=0;i--){
+        if(db.registros[i].foto&&db.registros[i].foto.length>10000){
+          db.registros[i].foto=null;liberou=true;break;
+        }
+      }
+      try{localStorage.setItem('maluDB',JSON.stringify(db));if(liberou)toast('⚠️ Espaço cheio: foto removida para salvar');}
+      catch(e2){toast('❌ Erro: armazenamento cheio');}
+    }
+  }
+}
 function hoje(){return new Date().toISOString().split('T')[0];}
 function mesAtual(){return db.config.mes?db.config.mes.substring(0,7):hoje().substring(0,7);}
 function formatMes(ym){if(!ym)return'';const[y,m]=ym.split('-');return['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][parseInt(m)-1]+' '+y;}
@@ -621,7 +636,28 @@ function alterarQtd(ctx,d){
 }
 function calcTotal(ctx){const v=parseFloat(document.getElementById(ctx+'-valor').value)||0;const q=ctx==='queima'?qtdQueima:qtdPecas;document.getElementById(ctx+'-total').textContent=fmtR(q*v);}
 
-function carregarFoto(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{fotoBase64=e.target.result;document.getElementById('foto-img').src=fotoBase64;document.getElementById('foto-area').style.display='none';document.getElementById('foto-preview').style.display='flex';};r.readAsDataURL(f);}
+function carregarFoto(input){
+  const f=input.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const original=e.target.result;
+    // Comprime para máx 600px e qualidade 0.6
+    const img=new Image();
+    img.onload=()=>{
+      const MAX=600;
+      let w=img.width,h=img.height;
+      if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      fotoBase64=c.toDataURL('image/jpeg',0.6);
+      document.getElementById('foto-img').src=fotoBase64;
+      document.getElementById('foto-area').style.display='none';
+      document.getElementById('foto-preview').style.display='flex';
+    };
+    img.src=original;
+  };
+  reader.readAsDataURL(f);
+}
 function removerFoto(){fotoBase64=null;document.getElementById('foto-area').style.display='flex';document.getElementById('foto-preview').style.display='none';document.getElementById('foto-input').value='';}
 
 function abrirEditModal(id){
@@ -684,8 +720,9 @@ function renderFicha(){
   document.getElementById('ficha-content').innerHTML=html;
 }
 
-function compartilharFicha(){
+async function compartilharFicha(){
   if(!alunaAtual)return;
+  toast('Gerando imagem...');
   const a=alunaAtual, mes=mesAtual();
   const regs=db.registros.filter(r=>r.alunaId===a.id&&r.mes===mes);
   const mens=a.mensalidade||db.config.mensalidade||0;
@@ -693,36 +730,40 @@ function compartilharFicha(){
   const tA=argilas.reduce((s,r)=>s+r.valor,0),tQ=queimas.reduce((s,r)=>s+r.valor,0),tP=pecas.reduce((s,r)=>s+r.valor,0);
   const total=+(mens+tA+tQ+tP).toFixed(2);
 
-  // Build list of rows to measure height
+  // Pré-carregar todas as fotos das queimas
+  const fotoImgs={};
+  await Promise.all(queimas.filter(r=>r.foto).map(r=>new Promise(res=>{
+    const i=new Image(); i.onload=()=>{fotoImgs[r.id]=i;res();};i.onerror=res; i.src=r.foto;
+  })));
+
+  // Montar linhas
   const rows=[];
-  rows.push({type:'header'});
   rows.push({type:'section_title',label:'Mensalidade',value:fmtR(mens)});
   if(argilas.length){
     const tKg=argilas.reduce((s,r)=>s+(r.peso*(r.qtd||1)),0);
     rows.push({type:'cat_header',color:'#3C3489',bg:'#EEEDFE',label:'Argila',sub:tKg.toFixed(3)+' kg'});
-    argilas.forEach(r=>rows.push({type:'item',label:r.desc,sub:fmtData(r.data)+' · '+(r.tipoArgila==='atelie'?'do ateliê':'da aluna')+' · '+(r.peso*(r.qtd||1)).toFixed(3)+' kg',value:r.valor>0?fmtR(r.valor):'—'}));
+    argilas.forEach(r=>rows.push({type:'item',foto:null,label:r.desc,sub:fmtData(r.data)+' · '+(r.tipoArgila==='atelie'?'do ateliê':'da aluna')+' · '+(r.peso*(r.qtd||1)).toFixed(3)+' kg',value:r.valor>0?fmtR(r.valor):'—'}));
     rows.push({type:'subtotal',color:'#3C3489',label:'subtotal argila',value:fmtR(tA)});
   }
   if(queimas.length){
     rows.push({type:'cat_header',color:'#993C1D',bg:'#FAECE7',label:'Queima de esmalte',sub:queimas.reduce((s,r)=>s+r.qtd,0)+' peças'});
-    queimas.forEach(r=>rows.push({type:'item',label:r.desc,sub:fmtData(r.data)+' · '+r.qtd+' un.',value:fmtR(r.valor)}));
+    queimas.forEach(r=>rows.push({type:'item',foto:fotoImgs[r.id]||null,label:r.desc,sub:fmtData(r.data)+' · '+r.qtd+' un.',value:fmtR(r.valor)}));
     rows.push({type:'subtotal',color:'#993C1D',label:'subtotal queima',value:fmtR(tQ)});
   }
   if(pecas.length){
     rows.push({type:'cat_header',color:'#085041',bg:'#E1F5EE',label:'Peças do ateliê',sub:pecas.reduce((s,r)=>s+r.qtd,0)+' peças'});
-    pecas.forEach(r=>rows.push({type:'item',label:r.desc,sub:fmtData(r.data)+' · '+r.qtd+' un.',value:fmtR(r.valor)}));
+    pecas.forEach(r=>rows.push({type:'item',foto:null,label:r.desc,sub:fmtData(r.data)+' · '+r.qtd+' un.',value:fmtR(r.valor)}));
     rows.push({type:'subtotal',color:'#085041',label:'subtotal peças',value:fmtR(tP)});
   }
   rows.push({type:'total',value:fmtR(total)});
 
-  const W=390, PAD=20, LINE=19, ITEM_H=46, CAT_H=38, SUB_H=30, SECTION_H=44;
-  let H=110; // header height
+  const W=390, PAD=20, FOTO_SZ=44, ITEM_H=54, ITEM_NO_FOTO_H=46, CAT_H=38, SUB_H=30, SECTION_H=44;
+  let H=110;
   rows.forEach(r=>{
-    if(r.type==='header')return;
-    else if(r.type==='section_title')H+=SECTION_H;
+    if(r.type==='section_title')H+=SECTION_H;
     else if(r.type==='cat_header')H+=CAT_H;
-    else if(r.type==='item')H+=ITEM_H;
-    else if(r.type==='subtotal')H+=SUB_H;
+    else if(r.type==='item')H+=(r.foto?ITEM_H:ITEM_NO_FOTO_H);
+    else if(r.type==='subtotal')H+=SUB_H+8;
     else if(r.type==='total')H+=60;
   });
   H+=PAD;
@@ -736,31 +777,25 @@ function compartilharFicha(){
   // bg
   ctx.fillStyle='#F5F4F0'; ctx.fillRect(0,0,W,H);
 
-  // header bg
+  // header
   ctx.fillStyle='#3C3489';
-  roundRect(ctx,0,0,W,100,0);
-  ctx.fill();
+  roundRect(ctx,0,0,W,105,0); ctx.fill();
   ctx.fillStyle='white';
-  ctx.font='bold 11px sans-serif'; ctx.letterSpacing='2px';
-  ctx.fillText('ATELIÊ MALU SERRA',PAD,28);
-  ctx.letterSpacing='0px';
-  ctx.font='bold 18px Georgia,serif';
-  ctx.fillText(a.nome,PAD,54);
+  ctx.font='bold 10px sans-serif';
+  ctx.fillText('ATELIÊ MALU SERRA',PAD,24);
+  ctx.font='bold 19px Georgia,serif';
+  ctx.fillText(a.nome,PAD,52);
   ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font='13px sans-serif';
-  ctx.fillText(formatMes(mes),PAD,74);
+  ctx.fillText(formatMes(mes),PAD,72);
 
-  let y=110;
+  let y=115;
 
   rows.forEach(r=>{
-    if(r.type==='header')return;
-
     if(r.type==='section_title'){
-      // white card row
       ctx.fillStyle='white';
       roundRect(ctx,PAD,y,W-PAD*2,SECTION_H-4,8); ctx.fill();
       ctx.fillStyle='#1a1a1a'; ctx.font='600 14px sans-serif';
       ctx.fillText(r.label,PAD+14,y+27);
-      ctx.fillStyle='#1a1a1a'; ctx.font='600 14px sans-serif';
       const vw=ctx.measureText(r.value).width;
       ctx.fillText(r.value,W-PAD-14-vw,y+27);
       y+=SECTION_H;
@@ -770,25 +805,37 @@ function compartilharFicha(){
       roundRect(ctx,PAD,y,W-PAD*2,CAT_H,8,true,false); ctx.fill();
       ctx.fillStyle=r.color; ctx.font='bold 13px sans-serif';
       ctx.fillText(r.label,PAD+12,y+24);
-      const sw=ctx.measureText(r.sub).width;
       ctx.font='12px sans-serif';
+      const sw=ctx.measureText(r.sub).width;
       ctx.fillText(r.sub,W-PAD-12-sw,y+24);
       y+=CAT_H;
     }
     else if(r.type==='item'){
-      ctx.fillStyle='white';
-      ctx.fillRect(PAD,y,W-PAD*2,ITEM_H);
+      const IH=r.foto?ITEM_H:ITEM_NO_FOTO_H;
+      ctx.fillStyle='white'; ctx.fillRect(PAD,y,W-PAD*2,IH);
+      let textX=PAD+14;
+      if(r.foto){
+        // draw foto with rounded clip
+        const fx=PAD+14, fy=y+(IH-FOTO_SZ)/2, fr=6;
+        ctx.save();
+        ctx.beginPath();
+        roundRect(ctx,fx,fy,FOTO_SZ,FOTO_SZ,fr);
+        ctx.clip();
+        ctx.drawImage(r.foto,fx,fy,FOTO_SZ,FOTO_SZ);
+        ctx.restore();
+        textX=PAD+14+FOTO_SZ+10;
+      }
+      const midY=r.foto?(y+IH/2-5):(y+17);
       ctx.fillStyle='#1a1a1a'; ctx.font='600 13px sans-serif';
-      ctx.fillText(r.label,PAD+14,y+17);
+      ctx.fillText(r.label,textX,midY);
       ctx.fillStyle='#666'; ctx.font='11px sans-serif';
-      ctx.fillText(r.sub,PAD+14,y+33);
+      ctx.fillText(r.sub,textX,midY+16);
       ctx.fillStyle='#1a1a1a'; ctx.font='600 13px sans-serif';
       const vw=ctx.measureText(r.value).width;
-      ctx.fillText(r.value,W-PAD-14-vw,y+17);
-      // divider
+      ctx.fillText(r.value,W-PAD-14-vw,midY);
       ctx.strokeStyle='rgba(0,0,0,0.07)'; ctx.lineWidth=0.5;
-      ctx.beginPath(); ctx.moveTo(PAD+14,y+ITEM_H-0.5); ctx.lineTo(W-PAD-14,y+ITEM_H-0.5); ctx.stroke();
-      y+=ITEM_H;
+      ctx.beginPath(); ctx.moveTo(PAD+14,y+IH-0.5); ctx.lineTo(W-PAD-14,y+IH-0.5); ctx.stroke();
+      y+=IH;
     }
     else if(r.type==='subtotal'){
       ctx.fillStyle='white';
@@ -812,8 +859,7 @@ function compartilharFicha(){
     }
   });
 
-  // Show image in a full-screen overlay to save/share
-  const dataUrl=canvas.toDataURL('image/png');
+  const dataUrl=canvas.toDataURL('image/jpeg',0.92);
   showImageOverlay(dataUrl,a);
 }
 
@@ -825,35 +871,42 @@ function roundRect(ctx,x,y,w,h,r,topOnly,bottomOnly){
   ctx.closePath();
 }
 
-function showImageOverlay(dataUrl,aluna){
+async function showImageOverlay(dataUrl,aluna){
+  // Tenta compartilhamento nativo (iOS Share Sheet) — funciona direto no WhatsApp
+  if(navigator.share && navigator.canShare){
+    try{
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      const file = new File([blob], `ficha-${aluna.nome.split(' ')[0].toLowerCase()}.jpg`, {type:'image/jpeg'});
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({files:[file], title:'Ficha Ateliê Malu Serra'});
+        return; // sucesso — não precisa mostrar overlay
+      }
+    }catch(e){
+      if(e.name==='AbortError') return; // usuário cancelou — não mostra overlay
+      // fallback para overlay se der outro erro
+    }
+  }
+
+  // Fallback: overlay com imagem para salvar manualmente
   const existing=document.getElementById('img-overlay');if(existing)existing.remove();
   const ov=document.createElement('div');
   ov.id='img-overlay';
-  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;padding:20px 16px 40px;gap:14px;';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;padding:24px 16px 40px;gap:12px;';
   const title=document.createElement('p');
-  title.textContent='Salve a imagem e envie pelo WhatsApp';
-  title.style.cssText='color:white;font-size:14px;font-family:sans-serif;text-align:center;margin-top:10px;';
+  title.textContent='Pressione e segure para salvar';
+  title.style.cssText='color:white;font-size:14px;font-family:sans-serif;text-align:center;font-weight:600;';
   const hint=document.createElement('p');
-  hint.textContent='Pressione e segure a imagem para salvar';
-  hint.style.cssText='color:rgba(255,255,255,0.6);font-size:12px;font-family:sans-serif;text-align:center;margin-top:-8px;';
+  hint.textContent='Depois abra o WhatsApp e envie da galeria';
+  hint.style.cssText='color:rgba(255,255,255,0.55);font-size:12px;font-family:sans-serif;text-align:center;margin-top:-6px;';
   const img=document.createElement('img');
-  img.src=dataUrl; img.style.cssText='width:100%;max-width:390px;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.4);';
-  const tel=aluna.celular?aluna.celular.replace(/\D/g,''):'';
-  const btnRow=document.createElement('div');
-  btnRow.style.cssText='display:flex;gap:10px;width:100%;max-width:390px;';
-  if(tel){
-    const btnWA=document.createElement('button');
-    btnWA.textContent='Abrir WhatsApp';
-    btnWA.style.cssText='flex:1;padding:13px;background:#25D366;color:white;border:none;border-radius:12px;font-size:14px;font-family:sans-serif;cursor:pointer;';
-    btnWA.onclick=()=>{window.open(`https://wa.me/55${tel}`,'_blank');};
-    btnRow.appendChild(btnWA);
-  }
+  img.src=dataUrl;
+  img.style.cssText='width:100%;max-width:390px;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
   const btnClose=document.createElement('button');
   btnClose.textContent='Fechar';
-  btnClose.style.cssText='flex:1;padding:13px;background:rgba(255,255,255,0.15);color:white;border:none;border-radius:12px;font-size:14px;font-family:sans-serif;cursor:pointer;';
+  btnClose.style.cssText='width:100%;max-width:390px;padding:14px;background:rgba(255,255,255,0.12);color:white;border:none;border-radius:12px;font-size:15px;font-family:sans-serif;cursor:pointer;';
   btnClose.onclick=()=>ov.remove();
-  btnRow.appendChild(btnClose);
-  ov.appendChild(title);ov.appendChild(hint);ov.appendChild(img);ov.appendChild(btnRow);
+  ov.appendChild(title);ov.appendChild(hint);ov.appendChild(img);ov.appendChild(btnClose);
   document.body.appendChild(ov);
 }
 
