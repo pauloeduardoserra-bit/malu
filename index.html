@@ -354,6 +354,24 @@
         <input type="month" id="config-mes" oninput="salvarConfig();renderScrollMeses()" style="font-size:13px;padding:6px 10px;background:white;width:auto;">
       </div>
     </div>
+    <p class="section-label">BACKUP E RESTAURAÇÃO</p>
+    <div class="card">
+      <div style="padding:12px 14px;border-bottom:0.5px solid var(--border);">
+        <p style="font-size:14px;font-weight:600;font-family:sans-serif;color:var(--text);margin-bottom:3px;">Exportar backup</p>
+        <p style="font-size:11px;color:var(--text2);font-family:sans-serif;margin-bottom:10px;">Salva todos os dados — alunas, registros, fichas — num arquivo. Guarde no iCloud, e-mail ou WhatsApp.</p>
+        <button onclick="exportarBackup()" style="width:100%;padding:11px;background:var(--roxo);color:white;border:none;border-radius:var(--radius-sm);font-size:14px;font-family:sans-serif;cursor:pointer;">
+          Exportar backup
+        </button>
+      </div>
+      <div style="padding:12px 14px;">
+        <p style="font-size:14px;font-weight:600;font-family:sans-serif;color:var(--text);margin-bottom:3px;">Restaurar backup</p>
+        <p style="font-size:11px;color:var(--text2);font-family:sans-serif;margin-bottom:10px;">Selecione o arquivo de backup para restaurar. <span style="color:var(--laranja);font-weight:600;">Atenção: substitui todos os dados atuais.</span></p>
+        <button onclick="document.getElementById('backup-input').click()" style="width:100%;padding:11px;background:var(--bg);color:var(--roxo);border:1.5px solid var(--roxo);border-radius:var(--radius-sm);font-size:14px;font-family:sans-serif;cursor:pointer;">
+          Importar backup
+        </button>
+        <input type="file" id="backup-input" accept=".json" style="display:none;" onchange="importarBackup(this)">
+      </div>
+    </div>
   </div>
   <div class="safe-bottom"></div>
 </div>
@@ -957,6 +975,46 @@ function salvarCadastro(){
   if(cadEditId){const idx=db.alunas.findIndex(a=>a.id===cadEditId);if(idx>=0)db.alunas[idx]={...db.alunas[idx],...dados};toast('Cadastro atualizado!');}
   else{dados.id=Date.now();db.alunas.push(dados);toast('Aluna cadastrada!');}
   db.alunas.sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));saveDB(db);cadEditId=null;goTo('screen-alunas-lista');renderListaAlunas(db.alunas);
+}
+
+function exportarBackup(){
+  const dados=JSON.stringify(db,null,2);
+  const agora=new Date();
+  const stamp=agora.getFullYear()+'-'+String(agora.getMonth()+1).padStart(2,'0')+'-'+String(agora.getDate()).padStart(2,'0');
+  const fileName=`malu-atelie-backup-${stamp}.json`;
+  const blob=new Blob([dados],{type:'application/json'});
+  const file=new File([blob],fileName,{type:'application/json'});
+  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+    navigator.share({files:[file],title:'Backup Ateliê Malu Serra'}).catch(e=>{
+      if(e.name!=='AbortError')baixarArquivo(blob,fileName);
+    });
+  } else {
+    baixarArquivo(blob,fileName);
+  }
+}
+function baixarArquivo(blob,fileName){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=fileName;a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function importarBackup(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const dados=JSON.parse(e.target.result);
+      // Valida estrutura mínima
+      if(!dados.alunas||!dados.registros||!dados.config){toast('❌ Arquivo inválido');return;}
+      if(!confirm(`Restaurar backup com ${dados.alunas.length} alunas e ${dados.registros.length} registros?\n\nIsso substituirá todos os dados atuais.`))return;
+      localStorage.setItem('maluDB',JSON.stringify(dados));
+      db=getDB();
+      carregarConfig();
+      renderScrollMeses();
+      toast('✅ Backup restaurado com sucesso!');
+    }catch(err){toast('❌ Erro ao ler o arquivo');}
+    input.value='';
+  };
+  reader.readAsText(file);
 }
 
 function exportarExcel(){
