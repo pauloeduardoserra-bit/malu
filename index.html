@@ -270,16 +270,21 @@
 
 <!-- FICHA -->
 <div id="screen-ficha" class="screen">
-  <div class="header">
-    <button class="btn-back" onclick="goTo('screen-aluna')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></button>
-    <div style="flex:1;text-align:center;"><div class="header-title">Ficha mensal</div><div class="header-sub" id="ficha-sub"></div></div>
-    <div style="width:34px;"></div>
+  <div class="header" style="flex-direction:column;align-items:flex-start;padding-bottom:16px;">
+    <div style="display:flex;align-items:center;gap:12px;width:100%;">
+      <button class="btn-back" onclick="goTo('screen-aluna')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+      <span style="color:rgba(255,255,255,0.6);font-size:11px;font-family:sans-serif;letter-spacing:0.06em;">FICHA MENSAL</span>
+    </div>
+    <div style="padding:10px 0 0 0;">
+      <div id="ficha-nome-header" style="color:white;font-size:22px;font-family:Georgia,serif;letter-spacing:0.02em;"></div>
+      <div id="ficha-mes-header" style="color:rgba(255,255,255,0.7);font-size:14px;font-family:sans-serif;margin-top:3px;"></div>
+    </div>
   </div>
   <div class="content" id="ficha-content"></div>
   <div style="padding:0 16px 16px;">
     <button class="btn-outline" onclick="compartilharFicha()">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 9v4a1 1 0 01-1 1H4a1 1 0 01-1-1V9" stroke="var(--roxo)" stroke-width="1.3" stroke-linecap="round"/><path d="M8 2v8M5 5l3-3 3 3" stroke="var(--roxo)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      Enviar por WhatsApp
+      Gerar imagem para WhatsApp
     </button>
   </div>
   <div class="safe-bottom"></div>
@@ -651,7 +656,8 @@ function calcTotalAluna(id,mes){
 }
 function renderFicha(){
   const mes=mesAtual(),a=alunaAtual;
-  document.getElementById('ficha-sub').textContent=a.nome+' · '+formatMes(mes);
+  document.getElementById('ficha-nome-header').textContent=a.nome;
+  document.getElementById('ficha-mes-header').textContent=formatMes(mes);
   const regs=db.registros.filter(r=>r.alunaId===a.id&&r.mes===mes);
   const mens=a.mensalidade||db.config.mensalidade||0;
   const argilas=regs.filter(r=>r.tipo==='argila'),queimas=regs.filter(r=>r.tipo==='queima'),pecas=regs.filter(r=>r.tipo==='peca');
@@ -680,20 +686,175 @@ function renderFicha(){
 
 function compartilharFicha(){
   if(!alunaAtual)return;
-  const mes=formatMes(mesAtual()),a=alunaAtual;
-  const regs=db.registros.filter(r=>r.alunaId===a.id&&r.mes===mesAtual());
+  const a=alunaAtual, mes=mesAtual();
+  const regs=db.registros.filter(r=>r.alunaId===a.id&&r.mes===mes);
   const mens=a.mensalidade||db.config.mensalidade||0;
   const argilas=regs.filter(r=>r.tipo==='argila'),queimas=regs.filter(r=>r.tipo==='queima'),pecas=regs.filter(r=>r.tipo==='peca');
   const tA=argilas.reduce((s,r)=>s+r.valor,0),tQ=queimas.reduce((s,r)=>s+r.valor,0),tP=pecas.reduce((s,r)=>s+r.valor,0);
   const total=+(mens+tA+tQ+tP).toFixed(2);
-  let txt=`🏺 *Ateliê Malu Serra*\n📋 Ficha de ${mes} — ${a.nome.split(' ')[0]}\n━━━━━━━━━━━━━━━\n`;
-  txt+=`💳 Mensalidade: ${fmtR(mens)}\n`;
-  if(argilas.length){txt+=`\n🪨 *Argila*\n`;argilas.forEach(r=>{txt+=`  • ${r.desc} (${(r.peso*(r.qtd||1)).toFixed(3)}kg) — ${r.valor>0?fmtR(r.valor):'—'}\n`;});txt+=`  Subtotal: ${fmtR(tA)}\n`;}
-  if(queimas.length){txt+=`\n🔥 *Queima de esmalte*\n`;queimas.forEach(r=>{txt+=`  • ${r.desc} (${r.qtd}x) — ${fmtR(r.valor)}\n`;});txt+=`  Subtotal: ${fmtR(tQ)}\n`;}
-  if(pecas.length){txt+=`\n🏷️ *Peças do ateliê*\n`;pecas.forEach(r=>{txt+=`  • ${r.desc} (${r.qtd}x) — ${fmtR(r.valor)}\n`;});txt+=`  Subtotal: ${fmtR(tP)}\n`;}
-  txt+=`━━━━━━━━━━━━━━━\n💰 *Total: ${fmtR(total)}*`;
-  const tel=a.celular?a.celular.replace(/\D/g,''):'';
-  window.open(tel?`https://wa.me/55${tel}?text=${encodeURIComponent(txt)}`:`https://wa.me/?text=${encodeURIComponent(txt)}`,'_blank');
+
+  // Build list of rows to measure height
+  const rows=[];
+  rows.push({type:'header'});
+  rows.push({type:'section_title',label:'Mensalidade',value:fmtR(mens)});
+  if(argilas.length){
+    const tKg=argilas.reduce((s,r)=>s+(r.peso*(r.qtd||1)),0);
+    rows.push({type:'cat_header',color:'#3C3489',bg:'#EEEDFE',label:'Argila',sub:tKg.toFixed(3)+' kg'});
+    argilas.forEach(r=>rows.push({type:'item',label:r.desc,sub:fmtData(r.data)+' · '+(r.tipoArgila==='atelie'?'do ateliê':'da aluna')+' · '+(r.peso*(r.qtd||1)).toFixed(3)+' kg',value:r.valor>0?fmtR(r.valor):'—'}));
+    rows.push({type:'subtotal',color:'#3C3489',label:'subtotal argila',value:fmtR(tA)});
+  }
+  if(queimas.length){
+    rows.push({type:'cat_header',color:'#993C1D',bg:'#FAECE7',label:'Queima de esmalte',sub:queimas.reduce((s,r)=>s+r.qtd,0)+' peças'});
+    queimas.forEach(r=>rows.push({type:'item',label:r.desc,sub:fmtData(r.data)+' · '+r.qtd+' un.',value:fmtR(r.valor)}));
+    rows.push({type:'subtotal',color:'#993C1D',label:'subtotal queima',value:fmtR(tQ)});
+  }
+  if(pecas.length){
+    rows.push({type:'cat_header',color:'#085041',bg:'#E1F5EE',label:'Peças do ateliê',sub:pecas.reduce((s,r)=>s+r.qtd,0)+' peças'});
+    pecas.forEach(r=>rows.push({type:'item',label:r.desc,sub:fmtData(r.data)+' · '+r.qtd+' un.',value:fmtR(r.valor)}));
+    rows.push({type:'subtotal',color:'#085041',label:'subtotal peças',value:fmtR(tP)});
+  }
+  rows.push({type:'total',value:fmtR(total)});
+
+  const W=390, PAD=20, LINE=19, ITEM_H=46, CAT_H=38, SUB_H=30, SECTION_H=44;
+  let H=110; // header height
+  rows.forEach(r=>{
+    if(r.type==='header')return;
+    else if(r.type==='section_title')H+=SECTION_H;
+    else if(r.type==='cat_header')H+=CAT_H;
+    else if(r.type==='item')H+=ITEM_H;
+    else if(r.type==='subtotal')H+=SUB_H;
+    else if(r.type==='total')H+=60;
+  });
+  H+=PAD;
+
+  const scale=2;
+  const canvas=document.createElement('canvas');
+  canvas.width=W*scale; canvas.height=H*scale;
+  const ctx=canvas.getContext('2d');
+  ctx.scale(scale,scale);
+
+  // bg
+  ctx.fillStyle='#F5F4F0'; ctx.fillRect(0,0,W,H);
+
+  // header bg
+  ctx.fillStyle='#3C3489';
+  roundRect(ctx,0,0,W,100,0);
+  ctx.fill();
+  ctx.fillStyle='white';
+  ctx.font='bold 11px sans-serif'; ctx.letterSpacing='2px';
+  ctx.fillText('ATELIÊ MALU SERRA',PAD,28);
+  ctx.letterSpacing='0px';
+  ctx.font='bold 18px Georgia,serif';
+  ctx.fillText(a.nome,PAD,54);
+  ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font='13px sans-serif';
+  ctx.fillText(formatMes(mes),PAD,74);
+
+  let y=110;
+
+  rows.forEach(r=>{
+    if(r.type==='header')return;
+
+    if(r.type==='section_title'){
+      // white card row
+      ctx.fillStyle='white';
+      roundRect(ctx,PAD,y,W-PAD*2,SECTION_H-4,8); ctx.fill();
+      ctx.fillStyle='#1a1a1a'; ctx.font='600 14px sans-serif';
+      ctx.fillText(r.label,PAD+14,y+27);
+      ctx.fillStyle='#1a1a1a'; ctx.font='600 14px sans-serif';
+      const vw=ctx.measureText(r.value).width;
+      ctx.fillText(r.value,W-PAD-14-vw,y+27);
+      y+=SECTION_H;
+    }
+    else if(r.type==='cat_header'){
+      ctx.fillStyle=r.bg;
+      roundRect(ctx,PAD,y,W-PAD*2,CAT_H,8,true,false); ctx.fill();
+      ctx.fillStyle=r.color; ctx.font='bold 13px sans-serif';
+      ctx.fillText(r.label,PAD+12,y+24);
+      const sw=ctx.measureText(r.sub).width;
+      ctx.font='12px sans-serif';
+      ctx.fillText(r.sub,W-PAD-12-sw,y+24);
+      y+=CAT_H;
+    }
+    else if(r.type==='item'){
+      ctx.fillStyle='white';
+      ctx.fillRect(PAD,y,W-PAD*2,ITEM_H);
+      ctx.fillStyle='#1a1a1a'; ctx.font='600 13px sans-serif';
+      ctx.fillText(r.label,PAD+14,y+17);
+      ctx.fillStyle='#666'; ctx.font='11px sans-serif';
+      ctx.fillText(r.sub,PAD+14,y+33);
+      ctx.fillStyle='#1a1a1a'; ctx.font='600 13px sans-serif';
+      const vw=ctx.measureText(r.value).width;
+      ctx.fillText(r.value,W-PAD-14-vw,y+17);
+      // divider
+      ctx.strokeStyle='rgba(0,0,0,0.07)'; ctx.lineWidth=0.5;
+      ctx.beginPath(); ctx.moveTo(PAD+14,y+ITEM_H-0.5); ctx.lineTo(W-PAD-14,y+ITEM_H-0.5); ctx.stroke();
+      y+=ITEM_H;
+    }
+    else if(r.type==='subtotal'){
+      ctx.fillStyle='white';
+      roundRect(ctx,PAD,y,W-PAD*2,SUB_H,0,false,true); ctx.fill();
+      ctx.fillStyle='#888'; ctx.font='11px sans-serif';
+      ctx.fillText(r.label,PAD+14,y+19);
+      ctx.fillStyle=r.color; ctx.font='bold 13px sans-serif';
+      const vw=ctx.measureText(r.value).width;
+      ctx.fillText(r.value,W-PAD-14-vw,y+19);
+      y+=SUB_H+8;
+    }
+    else if(r.type==='total'){
+      ctx.fillStyle='#3C3489';
+      roundRect(ctx,PAD,y,W-PAD*2,50,10); ctx.fill();
+      ctx.fillStyle='white'; ctx.font='15px sans-serif';
+      ctx.fillText('Total do mês',PAD+16,y+30);
+      ctx.font='bold 20px sans-serif';
+      const vw=ctx.measureText(r.value).width;
+      ctx.fillText(r.value,W-PAD-16-vw,y+30);
+      y+=60;
+    }
+  });
+
+  // Show image in a full-screen overlay to save/share
+  const dataUrl=canvas.toDataURL('image/png');
+  showImageOverlay(dataUrl,a);
+}
+
+function roundRect(ctx,x,y,w,h,r,topOnly,bottomOnly){
+  ctx.beginPath();
+  if(topOnly){ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h);ctx.lineTo(x,y+h);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);}
+  else if(bottomOnly){ctx.moveTo(x,y);ctx.lineTo(x+w,y);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y);}
+  else{ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);}
+  ctx.closePath();
+}
+
+function showImageOverlay(dataUrl,aluna){
+  const existing=document.getElementById('img-overlay');if(existing)existing.remove();
+  const ov=document.createElement('div');
+  ov.id='img-overlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;padding:20px 16px 40px;gap:14px;';
+  const title=document.createElement('p');
+  title.textContent='Salve a imagem e envie pelo WhatsApp';
+  title.style.cssText='color:white;font-size:14px;font-family:sans-serif;text-align:center;margin-top:10px;';
+  const hint=document.createElement('p');
+  hint.textContent='Pressione e segure a imagem para salvar';
+  hint.style.cssText='color:rgba(255,255,255,0.6);font-size:12px;font-family:sans-serif;text-align:center;margin-top:-8px;';
+  const img=document.createElement('img');
+  img.src=dataUrl; img.style.cssText='width:100%;max-width:390px;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.4);';
+  const tel=aluna.celular?aluna.celular.replace(/\D/g,''):'';
+  const btnRow=document.createElement('div');
+  btnRow.style.cssText='display:flex;gap:10px;width:100%;max-width:390px;';
+  if(tel){
+    const btnWA=document.createElement('button');
+    btnWA.textContent='Abrir WhatsApp';
+    btnWA.style.cssText='flex:1;padding:13px;background:#25D366;color:white;border:none;border-radius:12px;font-size:14px;font-family:sans-serif;cursor:pointer;';
+    btnWA.onclick=()=>{window.open(`https://wa.me/55${tel}`,'_blank');};
+    btnRow.appendChild(btnWA);
+  }
+  const btnClose=document.createElement('button');
+  btnClose.textContent='Fechar';
+  btnClose.style.cssText='flex:1;padding:13px;background:rgba(255,255,255,0.15);color:white;border:none;border-radius:12px;font-size:14px;font-family:sans-serif;cursor:pointer;';
+  btnClose.onclick=()=>ov.remove();
+  btnRow.appendChild(btnClose);
+  ov.appendChild(title);ov.appendChild(hint);ov.appendChild(img);ov.appendChild(btnRow);
+  document.body.appendChild(ov);
 }
 
 function renderRelatorio(){
