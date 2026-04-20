@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Ateliê Malu Serra</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --roxo: #3C3489;
+    --roxo-light: #EEEDFE;
+    --roxo-mid: #534AB7;
+    --laranja: #D85A30;
+    --laranja-light: #FAECE7;
+    --verde: #0F6E56;
+    --verde-light: #E1F5EE;
+    --amber: #BA7517;
+    --amber-light: #FAEEDA;
+    --bg: #F5F4F0;
+    --card: #FFFFFF;
+    --border: rgba(0,0,0,0.09);
+    --text: #1a1a1a;
+    --text2: #666;
+    --text3: #999;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    font-family: 'Georgia', serif;
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  #app {
+    width: 100%;
+    max-width: 430px;
+    min-height: 100vh;
+    background: var(--bg);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* SCREENS */
+  .screen {
+    display: none;
+    flex-direction: column;
+    min-height: 100vh;
+    animation: fadeIn 0.2s ease;
+  }
+  .screen.active { display: flex; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
+
+  /* HEADER */
+  .header {
+    background: var(--roxo);
+    padding: 52px 20px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .header-title { color: white; font-size: 17px; font-weight: normal; font-family: Georgia, serif; }
+  .header-sub { color: rgba(255,255,255,0.6); font-size: 11px; font-family: sans-serif; margin-top: 1px; letter-spacing: 0.02em; }
+  .btn-back {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(255,255,255,0.15); border: none;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .btn-icon {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(255,255,255,0.15); border: none;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+
+  /* HOME HEADER */
+  .home-header {
+    background: var(--roxo);
+    padding: 52px 20px 24px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+  .logo-main { color: white; font-size: 26px; font-family: Georgia, serif; letter-spacing: 0.1em; }
+  .logo-sub { color: rgba(255,255,255,0.6); font-size: 9px; letter-spacing: 0.28em; font-family: sans-serif; margin-top: 3px; }
+  .home-actions { display: flex; gap: 8px; }
+
+  /* CONTENT */
+  .content { padding: 16px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+
+  /* CARD */
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    border: 0.5px solid var(--border);
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 11px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .card-row {
+    padding: 11px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 0.5px solid var(--border);
+    cursor: pointer;
+  }
+  .card-row:last-child { border-bottom: none; }
+
+  /* LABEL */
+  .section-label {
+    font-size: 10px; color: var(--text3); letter-spacing: 0.08em;
+    font-family: sans-serif; padding: 0 2px;
+  }
+
+  /* ALUNA ITEM */
+  .aluna-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px;
+    background: var(--card);
+    border-radius: var(--radius);
+    border: 0.5px solid var(--border);
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+  }
+  .avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--roxo-light);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: bold; color: var(--roxo);
+    flex-shrink: 0; font-family: sans-serif;
+  }
+  .avatar-lg {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: bold; color: white;
+    flex-shrink: 0; font-family: sans-serif;
+  }
+
+  /* BADGE */
+  .badge {
+    font-size: 10px; padding: 3px 8px; border-radius: 10px;
+    font-family: sans-serif; white-space: nowrap;
+  }
+  .badge-green { background: var(--verde-light); color: #085041; }
+  .badge-amber { background: var(--amber-light); color: #633806; }
+  .badge-roxo  { background: var(--roxo-light); color: var(--roxo); }
+
+  /* FORM */
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  label { font-size: 12px; color: var(--text2); font-family: sans-serif; }
+  input, textarea, select {
+    width: 100%; padding: 10px 12px;
+    font-size: 14px; font-family: sans-serif;
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+  }
+  input:focus, textarea:focus { border-color: var(--roxo); }
+  textarea { resize: none; }
+
+  /* BUTTONS */
+  .btn-primary {
+    width: 100%; padding: 14px;
+    background: var(--roxo); color: white;
+    border: none; border-radius: var(--radius);
+    font-size: 15px; font-family: sans-serif;
+    cursor: pointer;
+  }
+  .btn-outline {
+    width: 100%; padding: 13px;
+    background: transparent; color: var(--roxo);
+    border: 1.5px solid var(--roxo);
+    border-radius: var(--radius);
+    font-size: 15px; font-family: sans-serif;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+
+  /* TIPO SELECT */
+  .tipo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tipo-btn {
+    padding: 12px 8px; border-radius: var(--radius-sm);
+    border: 0.5px solid var(--border); background: var(--bg);
+    cursor: pointer; text-align: center;
+    font-family: sans-serif; font-size: 13px; color: var(--text);
+  }
+  .tipo-btn.active {
+    border: 2px solid var(--roxo); background: var(--roxo-light); color: var(--roxo);
+  }
+
+  /* QTD CONTROL */
+  .qtd-control {
+    display: flex; align-items: center;
+    background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .qtd-btn {
+    width: 34px; height: 38px; border: none;
+    background: transparent; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: var(--text2);
+  }
+  .qtd-val {
+    width: 34px; text-align: center; font-size: 15px;
+    font-weight: bold; color: var(--text); font-family: sans-serif;
+  }
+
+  /* SEARCH */
+  .search-bar {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--card); border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm); padding: 9px 12px;
+  }
+  .search-bar input {
+    border: none; background: transparent; padding: 0; font-size: 14px;
+  }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-card {
+    background: var(--card); border-radius: var(--radius-sm);
+    border: 0.5px solid var(--border); padding: 10px 12px;
+  }
+  .stat-label { font-size: 10px; color: var(--text3); font-family: sans-serif; margin-bottom: 3px; }
+  .stat-val { font-size: 18px; color: var(--text); font-family: sans-serif; font-weight: 600; }
+
+  /* REGISTROS LIST */
+  .reg-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 0; border-bottom: 0.5px solid var(--border);
+  }
+  .reg-item:last-child { border-bottom: none; }
+
+  /* FICHA TABLE */
+  .ficha-section {
+    background: var(--card); border-radius: var(--radius);
+    border: 0.5px solid var(--border); overflow: hidden; margin-bottom: 10px;
+  }
+  .ficha-section-header {
+    padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .ficha-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 14px; border-bottom: 0.5px solid var(--border);
+  }
+  .ficha-item:last-child { border-bottom: none; }
+  .ficha-thumb {
+    width: 40px; height: 40px; border-radius: 7px;
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  /* RELATORIO TABLE */
+  .rel-table { width: 100%; border-collapse: collapse; font-family: sans-serif; }
+  .rel-table th { font-size: 10px; color: var(--text3); letter-spacing: 0.05em; padding: 8px 10px; text-align: left; border-bottom: 0.5px solid var(--border); }
+  .rel-table td { font-size: 13px; padding: 10px 10px; border-bottom: 0.5px solid var(--border); vertical-align: middle; }
+  .rel-table tr:last-child td { border-bottom: none; }
+
+  /* TOAST */
+  #toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    background: #1a1a1a; color: white; padding: 10px 20px;
+    border-radius: 20px; font-size: 13px; font-family: sans-serif;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; }
+
+  /* BOTTOM SAFE */
+  .safe-bottom { height: 24px; flex-shrink: 0; }
+
+  /* PAINEL */
+  #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; }
+  #painel-alunas {
+    display: none; position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 430px;
+    background: var(--card); border-radius: 18px 18px 0 0; z-index: 101;
+    max-height: 75vh; flex-direction: column;
+  }
+  #painel-alunas.open { display: flex; }
+  .painel-handle { padding: 12px 0 8px; display: flex; justify-content: center; flex-shrink: 0; }
+  .painel-list { overflow-y: auto; padding: 0 16px 24px; display: flex; flex-direction: column; gap: 6px; }
+
+  /* FOTO AREA */
+  .foto-area {
+    width: 100%; height: 130px;
+    background: var(--bg); border: 0.5px dashed #bbb;
+    border-radius: var(--radius); display: flex;
+    flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; cursor: pointer;
+  }
+  .foto-preview {
+    width: 100%; height: 130px; border-radius: var(--radius);
+    background: linear-gradient(135deg, #FAECE7, #F5C4B3);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+
+  .nav-row { display: flex; gap: 8px; margin: 0 16px 16px; }
+  .nav-btn {
+    flex: 1; padding: 13px 8px;
+    background: var(--card); border: 0.5px solid var(--border);
+    border-radius: var(--radius); cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    font-family: sans-serif;
+  }
+  .nav-btn span { font-size: 12px; color: var(--text2); }
+
+  /* TOTAL BAR */
+  .total-bar {
+    background: var(--roxo); border-radius: var(--radius);
+    padding: 14px 16px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .total-bar p { color: white; font-family: sans-serif; margin: 0; }
+
+  /* month badge */
+  .month-badge {
+    margin: 0 16px 16px;
+    padding: 10px 14px; background: var(--card);
+    border-radius: var(--radius-sm); border: 0.5px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: sans-serif;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ========== TELA 1: HOME ========== -->
+<div id="screen-home" class="screen active">
+  <div class="home-header">
+    <div>
+      <div class="logo-main">MALU SERRA</div>
+      <div class="logo-sub">ATELIÊ E GALERIA</div>
+    </div>
+    <div class="home-actions">
+      <button class="btn-icon" onclick="goTo('screen-relatorio')" title="Relatório">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="1" width="14" height="16" rx="2" stroke="white" stroke-width="1.4"/><path d="M5 6h8M5 9h8M5 12h5" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </button>
+      <button class="btn-icon" onclick="goTo('screen-config')" title="Configurações">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="3" stroke="white" stroke-width="1.4"/><path d="M9 1v2M9 15v2M1 9h2M15 9h2M3.05 3.05l1.41 1.41M13.54 13.54l1.41 1.41M3.05 14.95l1.41-1.41M13.54 4.46l1.41-1.41" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="month-badge">
+    <span style="font-size:13px;color:var(--text2)">mês atual</span>
+    <span id="home-mes" style="font-size:14px;color:var(--text);font-weight:600"></span>
+  </div>
+  <div style="padding: 0 16px; margin-bottom: 12px;">
+    <button class="btn-primary" onclick="abrirPainel()">Selecionar aluna</button>
+  </div>
+  <div class="safe-bottom"></div>
+</div>
+
+<!-- ========== TELA: ALUNA ========== -->
+<div id="screen-aluna" class="screen">
+  <div class="header">
+    <button class="btn-back" onclick="goTo('screen-home')">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+    <div style="flex:1;text-align:center;">
+      <div id="aluna-avatar-header" class="avatar-lg" style="margin: 0 auto 6px;"></div>
+      <div class="header-title" id="aluna-nome-header"></div>
+      <div class="header-sub" id="aluna-mes-header"></div>
+    </div>
+    <button class="btn-icon" onclick="goFicha()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="2" stroke="white" stroke-width="1.3"/><path d="M5 5h6M5 8h6M5 11h4" stroke="white" stroke-width="1.3" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="content">
+    <p class="section-label">NOVO REGISTRO</p>
+    <button class="aluna-item" onclick="goTo('screen-argila')" style="border-radius:var(--radius);">
+      <div style="width:44px;height:44px;border-radius:11px;background:var(--roxo-light);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><ellipse cx="11" cy="16" rx="8" ry="4" fill="#AFA9EC"/><path d="M5 15 Q6 6 11 4 Q16 6 17 15" fill="#534AB7"/></svg>
+      </div>
+      <div style="flex:1;">
+        <p style="font-size:15px;font-weight:600;color:var(--text);font-family:sans-serif;">Argila</p>
+        <p style="font-size:12px;color:var(--text2);font-family:sans-serif;">peso após biscoito</p>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="#bbb" stroke-width="1.4" stroke-linecap="round"/></svg>
+    </button>
+    <button class="aluna-item" onclick="goTo('screen-queima')" style="border-radius:var(--radius);">
+      <div style="width:44px;height:44px;border-radius:11px;background:var(--laranja-light);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2 Q15 7 13 11 Q16 8 16 12 Q16 17 11 18 Q6 17 6 12 Q6 8 9 11 Q7 7 11 2Z" fill="#D85A30"/></svg>
+      </div>
+      <div style="flex:1;">
+        <p style="font-size:15px;font-weight:600;color:var(--text);font-family:sans-serif;">Queima de esmalte</p>
+        <p style="font-size:12px;color:var(--text2);font-family:sans-serif;">peça, quantidade e foto</p>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="#bbb" stroke-width="1.4" stroke-linecap="round"/></svg>
+    </button>
+    <button class="aluna-item" onclick="goTo('screen-pecas')" style="border-radius:var(--radius);">
+      <div style="width:44px;height:44px;border-radius:11px;background:var(--verde-light);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="3" y="10" width="6" height="8" rx="1.5" fill="#1D9E75"/><rect x="11" y="6" width="6" height="12" rx="1.5" fill="#5DCAA5"/><rect x="7" y="3" width="5" height="6" rx="1.5" fill="#9FE1CB"/></svg>
+      </div>
+      <div style="flex:1;">
+        <p style="font-size:15px;font-weight:600;color:var(--text);font-family:sans-serif;">Peças do ateliê</p>
+        <p style="font-size:12px;color:var(--text2);font-family:sans-serif;">peça vendida pelo ateliê</p>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="#bbb" stroke-width="1.4" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="safe-bottom"></div>
+</div>
+
+<!-- ========== TELA: ARGILA ========== -->
+<div id="screen-argila" class="screen">
+  <div class="header">
+    <button class="btn-back" onclick="goTo('screen-aluna')">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+    <div style="flex:1;"><div class="header-title">Argila</div><div class="header-sub" id="argila-sub"></div></div>
+  </div>
+  <div class="content">
+    <div class="form-group">
+      <label>Descrição da peça</label>
+      <input type="text" id="argila-desc" placeholder="ex: tigela média, vaso alto...">
+    </div>
+    <div class="form-group">
+      <label>Peso após biscoito (kg)</label>
+      <input type="number" id="argila-peso" placeholder="0.000" step="0.001" min="0" style="font-size:22px;font-weight:600;">
+    </div>
+    <div class="form-group">
+      <label>Tipo de argila</label>
+      <div class="tipo-grid">
+        <button class="tipo-btn active" id="tipo-atelie" onclick="selectTipo('atelie')">
+          <p style="font-weight:600;margin-bottom:2px;">Do ateliê</p>
+          <p id="preco-atelie-label" style="font-size:11px;color:var(--text2)">—</p>
+        </button>
+        <button class="tipo-btn" id="tipo-aluna" onclick="selectTipo('aluna')">
+          <p style="font-weight:600;margin-bottom:2px;">Da aluna</p>
+          <p id="preco-aluna-label" style="font-size:11px;color:var(--text2)">—</p>
+        </button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Data</label>
+      <input type="date" id="argila-data">
+    </div>
+    <button class="btn-primary" onclick="salvarArgila()">Salvar registro</button>
+
+    <p class="section-label" style="margin-top:6px;">REGISTROS DESTE MÊS</p>
+    <div id="argila-lista" class="card" style="padding:0 14px;"></div>
+    <div id="argila-total-box" style="display:none;text-align:right;padding:4px 2px;">
+      <span style="font-size:12px;color:var(--text2);font-family:sans-serif;">total: </span>
+      <span id="argila-total" style="font-size:14px;font-weight:600;color:var(--roxo);font-family:sans-serif;"></span>
+    </div>
+  </div>
+  <div class="safe-bottom"></div>
+</div>
+
+<!-- ========== TELA: QUEIMA ========== -->
+<div id="screen-queima" class="screen">
+  <div class="header">
+    <button class="btn-back" onclick="goTo('screen-aluna')">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+    <div style="flex:1;"><div class="header-title">Queima de esmalte</div><div class="header-sub" id="queima-sub"></div></div>
+  </div>
+  <div class="content">
+    <div class="form-group">
+      <label>Foto da peça</label>
+      <div class="foto-area" id="foto-area" onclick="document.getElementById('foto-input').click()">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="2" y="7" width="24" height="18" rx="3" stroke="#bbb" stroke-width="1.5"/><circle cx="14" cy="16" r="5" stroke="#bbb" stroke-width="1.5"/><path d="M10 7l2-3h4l2 3" stroke="#bbb" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span style="font-size:13px;color:var(--text3);font-family:sans-serif;">toque para fotografar</span>
+      </div>
+      <div class="foto-preview" id="foto-preview" style="display:none;">
+        <img id="foto-img" style="width:100%;height:130px;object-fit:cover;border-radius:var(--radius);">
+        <button onclick="removerFoto()" style="position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,0.5);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <input type="file" id="foto-input" accept="image/*" capture="environment" style="display:none;" onchange="carregarFoto(this)">
+    </div>
+    <div class="form-group">
+      <label>Descrição da peça</label>
+      <input type="text" id="queima-desc" placeholder="ex: xícara com pires, vaso médio...">
+    </div>
+    <div style="display:flex;align-items:flex-start;gap:10px;">
+      <div class="form-group" style="flex-shrink:0;">
+        <label>Qtd.</label>
+        <div class="qtd-control">
+          <button class="qtd-btn" onclick="alterarQtd('queima',-1)">−</button>
+          <div class="qtd-val" id="queima-qtd-val">1</div>
+          <button class="qtd-btn" onclick="alterarQtd('queima',1)">+</button>
+        </div>
+      </div>
+      <div class="form-group" style="flex:1;">
+        <label>Valor unitário</label>
+        <div style="position:relative;">
+          <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text2);font-family:sans-serif;">R$</span>
+          <input type="number" id="queima-valor" placeholder="0,00" min="0" step="0.01" oninput="calcTotal('queima')" style="padding-left:32px;font-size:16px;font-weight:600;">
+        </div>
+        <div style="background:var(--roxo-light);border-radius:var(--radius-sm);padding:6px 10px;display:flex;justify-content:space-between;">
+          <span style="font-size:11px;color:var(--roxo);font-family:sans-serif;">total</span>
+          <span id="queima-total" style="font-size:13px;font-weight:600;color:var(--roxo);font-family:sans-serif;">R$ 0,00</span>
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Data</label>
+      <input type="date" id="queima-data">
+    </div>
+    <button class="btn-primary" onclick="salvarQueima()">Salvar registro</button>
+
+    <p class="section-label" style="margin-top:6px;">REGISTROS DESTE MÊS</p>
+    <div id="queima-lista" class="card" style="padding:0 14px;"></div>
+  </div>
+  <div class="safe-bottom"></div>
+</div>
+
+<!-- ========== TELA: PEÇAS ========== -->
+<div id="screen-pecas" class="screen">
+  <div class="header">
+    <button class="btn-back" onclick="goTo('screen-aluna')">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+    <div style="flex:1;"><div class="header-title">Peças do ateliê</div><div class="header-sub" id="pecas-sub"></div></div>
+  </div>
+  <div class="content">
+    <div class="form-group">
+      <label>Descrição da peça</label>
+      <input type="text" id="pecas-desc" placeholder="ex: bowl grande, caneca, prato...">
+    </div>
+    <div style="display:flex;align-items:flex-start;gap:10px;">
+      <div class="form-group" style="flex-shrink:0;">
+        <label>Qtd.</label>
+        <div class="qtd-control">
+          <button class="qtd-btn" onclick="alterarQtd('pecas',-1)">−</button>
+          <div class="qtd-val" id="pecas-qtd-val">1</div>
+          <button class="qtd-btn" onclick="alterarQtd('pecas',1)">+</button>
+        </div>
+      </div>
+      <div class="form-group" style="flex:1;">
+        <label>Valor unitário</label>
+        <div style="position:relative;">
+          <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text2);font-family:sans-serif;">R$</span>
+          <input type="number" id="pecas-valor" placeholder="0,00" min="0" step="0.01" oninput="calcTotal('pecas')" style="padding-left:32px;font-size:16px;font-weight:600;">
+        </div>
+        <div style="background:var(--verde-light);border-radius:var(--radius-sm);padding:6px 10px;display:flex;justify-content:space-between;">
+          <span style="font-size:11px;color:var(--verde);font-family:sans-serif;">total</span>
+          <span id="pecas-total" style="font-size:13px;font-weight:600;color:var(--verde);font-family:sans-serif;">R$ 0,00</span>
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Data</label>
+      <input type="date" id="pecas-data">
+    </div>
+    <button class="btn-primary" onclick="salvarPeca()">Salvar registro</button>
+
+    <p class="section-label" style="margin-top:6px;">REGISTROS DESTE MÊS</p>
+    <div id="pecas-lista" class="card" style="padding:0 14px;"></div>
+  </div>
+  <div class="safe-bottom"></div>
+</div>
+
+<!-- ========== TELA: FICHA ========== -->
+<div id="screen-ficha" class="screen">
+  <div class="header">
+    <button class="btn-back" onclick="goTo('screen-aluna')">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+    <div style="flex:1;text-align:center;">
+      <div class="header-title">Ficha mensal</div>
+      <div class="header-sub" id="ficha-sub"></div>
+    </div>
+    <div style="width:34px;"></div>
+  </div>
+  <div class="content" id="ficha-content">
+  </div>
+  <div style="padding:0 16px 16px;">
+    <button class="btn-outline" onclick="compartilharFicha()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 9v4a1 1 0 01-1 1H4a1 1 0 01-1-1V9" stroke="var(--roxo)" stroke-width="1.3" stroke-linecap="round"/><path d="M8 2v8M5 5l3-3 3 3" stroke="var(--roxo)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Enviar por WhatsApp
+    </button>
+  </div>
+  <div class="safe-bottom"></div>
+</div>
+
+<!-- ========== TELA: RELATÓRIO ========== -->
+<div id="screen-relatorio" class="screen">
+  <div class="header">
+    <button class="btn-back" onclick="goTo('screen-home')">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+    <div style="flex:1;text-align:center;">
+      <div class="header-title">Relatório mensal</div>
+      <div class="header-sub" id="rel-mes"></div>
+    </div>
+    <div style="width:34px;"></div>
+  </div>
+  <div class="content">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">TOTAL DO MÊS</div>
+        <div class="stat-val" id="rel-total">R$ 0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">RECEBIDO</div>
+        <div class="stat-val" id="rel-recebido" style="color:var(--verde);">R$ 0</div>
+      </div>
+    </div>
+    <div class="card" style="overflow:hidden;">
+      <table class="rel-table">
+        <thead>
+          <tr>
+            <th>ALUNA</th>
+            <th style="text-align:right;">VALOR</th>
+            <th style="text-align:center;">FICHA</th>
+            <th style="text-align:center;">PGTO</th>
+          </tr>
+        </thead>
+        <tbody id="rel-body"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="safe-bottom"></div>
+</div>
+
+<!-- ========== TELA: CONFIG ========== -->
+<div id="screen-config" class="screen">
+  <div class="header">
+    <button class="btn-back" onclick="goTo('screen-home')">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+    <div style="flex:1;"><div class="header-title">Configurações</div></div>
+  </div>
+  <div class="content">
+    <p class="section-label">PREÇOS DE ARGILA (por kg)</p>
+    <div class="card">
+      <div style="padding:12px 14px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <p style="font-size:14px;font-weight:600;font-family:sans-serif;color:var(--text);">Argila do ateliê</p>
+          <p style="font-size:11px;color:var(--text2);font-family:sans-serif;">R$ por kg</p>
+        </div>
+        <div style="position:relative;width:100px;">
+          <span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text2);font-family:sans-serif;">R$</span>
+          <input type="number" id="config-preco-atelie" placeholder="0,00" step="0.01" min="0" oninput="salvarConfig()" style="padding-left:26px;font-size:14px;font-weight:600;text-align:right;background:white;">
+        </div>
+      </div>
+      <div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <p style="font-size:14px;font-weight:600;font-family:sans-serif;color:var(--text);">Argila da aluna</p>
+          <p style="font-size:11px;color:var(--text2);font-family:sans-serif;">R$ por kg</p>
+        </div>
+        <div style="position:relative;width:100px;">
+          <span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text2);font-family:sans-serif;">R$</span>
+          <input type="number" id="config-preco-aluna" placeholder="0,00" step="0.01" min="0" oninput="salvarConfig()" style="padding-left:26px;font-size:14px;font-weight:600;text-align:right;background:white;">
+        </div>
+      </div>
+    </div>
+
+    <p class="section-label">MENSALIDADE PADRÃO</p>
+    <div class="card">
+      <div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <p style="font-size:14px;font-weight:600;font-family:sans-serif;color:var(--text);">Valor padrão</p>
+          <p style="font-size:11px;color:var(--text2);font-family:sans-serif;">pode ser sobrescrito por aluna</p>
+        </div>
+        <div style="position:relative;width:100px;">
+          <span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text2);font-family:sans-serif;">R$</span>
+          <input type="number" id="config-mensalidade" placeholder="0,00" step="0.01" min="0" oninput="salvarConfig()" style="padding-left:26px;font-size:14px;font-weight:600;text-align:right;background:white;">
+        </div>
+      </div>
+    </div>
+
+    <p class="section-label">MÊS DE REFERÊNCIA</p>
+    <div class="card">
+      <div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <p style="font-size:14px;font-weight:600;font-family:sans-serif;color:var(--text);">Mês ativo</p>
+          <p style="font-size:11px;color:var(--text2);font-family:sans-serif;">registros e fichas</p>
+        </div>
+        <input type="month" id="config-mes" oninput="salvarConfig();atualizarMes()" style="font-size:13px;padding:6px 10px;background:white;width:auto;">
+      </div>
+    </div>
+  </div>
+  <div class="safe-bottom"></div>
+</div>
+
+<!-- ========== TELA: CADASTRO ========== -->
+<div id="screen-cadastro" class="screen">
+  <div class="header">
+    <button class="btn-back" onclick="goTo('screen-home')">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+    <div style="flex:1;"><div class="header-title" id="cad-titulo">Cadastro</div></div>
+  </div>
+  <div class="content">
+    <div style="display:flex;justify-content:center;margin-bottom:4px;">
+      <div class="avatar" style="width:64px;height:64px;font-size:20px;" id="cad-avatar-preview">?</div>
+    </div>
+    <p class="section-label">DADOS PESSOAIS</p>
+    <div class="form-group"><label>Nome completo</label><input type="text" id="cad-nome" placeholder="nome da aluna" oninput="atualizarAvatarPreview()"></div>
+    <div class="form-group"><label>CPF</label><input type="text" id="cad-cpf" placeholder="000.000.000-00" maxlength="14"></div>
+    <div class="form-group"><label>Celular</label><input type="tel" id="cad-celular" placeholder="(11) 99999-9999"></div>
+    <div class="form-group"><label>E-mail</label><input type="email" id="cad-email" placeholder="email@exemplo.com"></div>
+    <p class="section-label">ENDEREÇO</p>
+    <div class="form-group"><label>CEP</label><input type="text" id="cad-cep" placeholder="00000-000" maxlength="9"></div>
+    <div class="form-group"><label>Logradouro</label><input type="text" id="cad-logradouro" placeholder="rua, avenida..."></div>
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:8px;">
+      <div class="form-group"><label>Número</label><input type="text" id="cad-numero" placeholder="nº"></div>
+      <div class="form-group"><label>Complemento</label><input type="text" id="cad-complemento" placeholder="apto, bloco..."></div>
+    </div>
+    <div class="form-group"><label>Bairro</label><input type="text" id="cad-bairro" placeholder="bairro"></div>
+    <p class="section-label">CURSO</p>
+    <div class="form-group">
+      <label>Mensalidade (R$)</label>
+      <div style="position:relative;">
+        <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text2);font-family:sans-serif;">R$</span>
+        <input type="number" id="cad-mensalidade" placeholder="0,00" min="0" step="0.01" style="padding-left:32px;font-size:16px;font-weight:600;">
+      </div>
+    </div>
+    <div class="form-group"><label>Data de início</label><input type="date" id="cad-inicio"></div>
+    <div class="form-group">
+      <label>Status</label>
+      <div class="tipo-grid">
+        <button class="tipo-btn active" id="status-ativa" onclick="selectStatus('ativa')">Ativa</button>
+        <button class="tipo-btn" id="status-inativa" onclick="selectStatus('inativa')">Inativa</button>
+      </div>
+    </div>
+    <div class="form-group"><label>Observações</label><textarea id="cad-obs" rows="3" placeholder="notas..."></textarea></div>
+    <button class="btn-primary" onclick="salvarCadastro()">Salvar cadastro</button>
+    <div class="safe-bottom"></div>
+  </div>
+</div>
+
+<!-- PAINEL ALUNAS -->
+<div id="overlay" onclick="fecharPainel()"></div>
+<div id="painel-alunas">
+  <div class="painel-handle"><div style="width:36px;height:4px;border-radius:2px;background:#ddd;"></div></div>
+  <div style="padding:0 16px 10px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+    <p style="font-size:15px;font-weight:600;font-family:sans-serif;color:var(--text);">Qual aluna?</p>
+    <button onclick="abrirCadastroNovo()" style="display:flex;align-items:center;gap:5px;background:var(--roxo-light);border:none;border-radius:var(--radius-sm);padding:6px 10px;cursor:pointer;">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="var(--roxo)" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span style="font-size:12px;color:var(--roxo);font-weight:600;font-family:sans-serif;">Nova aluna</span>
+    </button>
+  </div>
+  <div style="padding:0 16px 10px;flex-shrink:0;">
+    <div class="search-bar">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4" stroke="#bbb" stroke-width="1.3"/><path d="M9.5 9.5l2.5 2.5" stroke="#bbb" stroke-width="1.3" stroke-linecap="round"/></svg>
+      <input type="text" placeholder="buscar..." oninput="filtrarAlunas(this.value)">
+    </div>
+  </div>
+  <div class="painel-list" id="painel-list"></div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ====== DATA ======
+const ALUNAS_INICIAL = [
+  { id:1,  nome:"Ana Carolina Faim",                cpf:"456.605.238-97", celular:"", email:"",                              logradouro:"Rua Dr. Jose Cadido de Souza 311", cep:"04580-50",  obs:"", mensalidade:0, status:"ativa" },
+  { id:2,  nome:"Alessandra Almeida",               cpf:"287.156.988-66", celular:"", email:"alessandra@vsarquitetura.com.br", logradouro:"Rua Pintassilgo 114 ap 251",       cep:"",          obs:"", mensalidade:0, status:"ativa" },
+  { id:3,  nome:"Ana Elisa Flores da Cruz",         cpf:"",               celular:"", email:"anaelisaflores16@hotmail.com",   logradouro:"Rua Hermano Ribeiro da Silva 155 ap.231", cep:"040080-80", obs:"", mensalidade:0, status:"ativa" },
+  { id:4,  nome:"André Jun Yassuda / Ivan",         cpf:"697.365.708-78", celular:"", email:"",                              logradouro:"Rua Prof Carolina Ribeiro 123 apto 152", cep:"04116-020", obs:"", mensalidade:0, status:"ativa" },
+  { id:5,  nome:"Carla Themis Lagrotta Germano",    cpf:"006.994.338-94", celular:"", email:"carlatlg@gmail.com",             logradouro:"Rua Tatui 54 apto 3",             cep:"01409-010", obs:"", mensalidade:0, status:"ativa" },
+  { id:6,  nome:"Conceicao de Maria Ferraz Varon",  cpf:"375.927.937-68", celular:"", email:"conceicaovaron@gmail.com",       logradouro:"Av dos Eucaliptos 217 apto 142",  cep:"045170-50", obs:"", mensalidade:0, status:"ativa" },
+  { id:7,  nome:"Clara Polizeli",                   cpf:"213.757.328-89", celular:"", email:"clarapolizeli@gmail.com",        logradouro:"Rua Caçununga 8",                 cep:"045080-60", obs:"", mensalidade:0, status:"ativa" },
+  { id:8,  nome:"Ellea Lie Nakano Penteado",        cpf:"205.332.978-50", celular:"", email:"ellealie@gmail.com",             logradouro:"Rua Gabriele D'annuzio 710 apto 702B", cep:"04619-002", obs:"", mensalidade:0, status:"ativa" },
+  { id:9,  nome:"Fernanda Rocha Machado Autran",    cpf:"137.215.137-03", celular:"", email:"",                              logradouro:"Rua Jesuino Arruda 122 apto 21c", cep:"04532-080", obs:"", mensalidade:0, status:"ativa" },
+  { id:10, nome:"Flavia Violante Ribeiro",          cpf:"089.119.068-67", celular:"", email:"flaviavfonseca@gmail.com",       logradouro:"Rua Embaixador Ribeiro Couto 40", cep:"04517-110", obs:"", mensalidade:0, status:"ativa" },
+  { id:11, nome:"Gabriela Saltorato",               cpf:"217.033.238-31", celular:"", email:"gsaltoratto@gmail.com",          logradouro:"Rua Pintassilgo 302 ap31",        cep:"04514-031", obs:"", mensalidade:0, status:"ativa" },
+  { id:12, nome:"Juliana Malzoni Tavares Guerreiro",cpf:"353.939.888-00", celular:"", email:"malzoniju@gmail.com",            logradouro:"Rua Baltazar da Veiga 130 2 andar Vila Nova Conceição", cep:"04510-000", obs:"", mensalidade:0, status:"ativa" },
+  { id:13, nome:"Junia Helena Ferreira Barros",     cpf:"095.894.638-86", celular:"", email:"",                              logradouro:"Rua Verbo Divino 1061 apto 32A torre 3", cep:"04719-905", obs:"", mensalidade:0, status:"ativa" },
+  { id:14, nome:"Luisa Pepe Ribeiro Barbosa",       cpf:"133.885.087-39", celular:"", email:"luizapr@gmail.com",             logradouro:"Av Rouxinil 431 apto 114",        cep:"04516-000", obs:"", mensalidade:0, status:"ativa" },
+  { id:15, nome:"Luiza Pepe",                       cpf:"133.885.087-39", celular:"", email:"luizapr@gmail.com",             logradouro:"Av Rouxinil 431 apto 114",        cep:"04516-000", obs:"", mensalidade:0, status:"ativa" },
+  { id:16, nome:"Luiza Yokoyama",                   cpf:"341.251.948-07", celular:"", email:"luizayokoyama@gmail.com",        logradouro:"Rua Ministro Luiz Galloti 322 apt 11a", cep:"", obs:"", mensalidade:0, status:"ativa" },
+  { id:17, nome:"Maria Clara Vargas Astrachan",     cpf:"124.088.137-19", celular:"", email:"mcvargasvieira@gmail.com",       logradouro:"Rua Andre Fernandes 205 apt12A", cep:"05436-020", obs:"", mensalidade:0, status:"ativa" },
+  { id:18, nome:"Marina Peixoto Bustamonte",        cpf:"336.940.688-80", celular:"", email:"bustamante_marina@hotmail.com",  logradouro:"Rua Irauna 629",                 cep:"04518-061", obs:"", mensalidade:0, status:"ativa" },
+  { id:19, nome:"Marina Pepe Ribeiro Barbosa",      cpf:"115.827.977-90", celular:"", email:"",                              logradouro:"Rua Baltazar da Veiga 130 apto 61 Vila Nova Conceição", cep:"04510-000", obs:"", mensalidade:0, status:"ativa" },
+  { id:20, nome:"Nora Di Giulio de Gradicola",      cpf:"037.962.208-43", celular:"", email:"noradi51@gmail.com",             logradouro:"Av. Coté de Azur 644 Granja Viana Cotia", cep:"06708-715", obs:"", mensalidade:0, status:"ativa" },
+  { id:21, nome:"Renato Zilli",                     cpf:"001.574.259-83", celular:"", email:"",                              logradouro:"Al Jau 605",                     cep:"01420-000", obs:"", mensalidade:0, status:"ativa" },
+  { id:22, nome:"Sandra S Lopes",                   cpf:"110.967.778-27", celular:"", email:"sansev2@yahoo.com.br",           logradouro:"Rua Arthur Prado 621",           cep:"01322-000", obs:"", mensalidade:0, status:"ativa" },
+  { id:23, nome:"Samantha Sahihi de Macedo Basso",  cpf:"282.873.378-52", celular:"", email:"sasmacedo@yahoo.com.br",         logradouro:"Rua Passo da Pátria 855 apto 24 Bela Aliança", cep:"05085-000", obs:"", mensalidade:0, status:"ativa" },
+  { id:24, nome:"Santuza de Oliveira Martins",      cpf:"338.353.318-25", celular:"", email:"",                              logradouro:"Rua Manuel Guedes 536 apto 91",  cep:"04536-070", obs:"", mensalidade:0, status:"ativa" },
+  { id:25, nome:"Sidneia Bertocci",                 cpf:"006.738.418-80", celular:"", email:"",                              logradouro:"Rua Joel Jorge de Melo 587 Vila Mariana", cep:"04128-081", obs:"", mensalidade:0, status:"ativa" },
+  { id:26, nome:"Silvia Ferreira da Rocha Mello",   cpf:"943.452.878-04", celular:"", email:"",                              logradouro:"Rua Zacarias de Goes 881 apto 81", cep:"04610-002", obs:"", mensalidade:0, status:"ativa" },
+  { id:27, nome:"Silvia Rocha Holanda Maia",        cpf:"011.394.134-06", celular:"", email:"",                              logradouro:"Rua Tuim 663",                   cep:"04514-103", obs:"", mensalidade:0, status:"ativa" },
+  { id:28, nome:"Sonia Amaral",                     cpf:"765.715.218-49", celular:"", email:"4255.soniaamaral@bradesco.com.br", logradouro:"Rua Engenheiro Jorge Oliva 433 apto 91 Vila Mascote", cep:"04362-060", obs:"", mensalidade:0, status:"ativa" },
+  { id:29, nome:"Taciana Travassos Augusto Lima",   cpf:"111.680.557-09", celular:"", email:"",                              logradouro:"Rua Afonso Braz 25 Apto 61 Vila Nova Conceição", cep:"04511-010", obs:"", mensalidade:0, status:"ativa" },
+  { id:30, nome:"Tiago Avelar",                     cpf:"341.330.538-77", celular:"", email:"thiagoavelar@hotmail.com",       logradouro:"Rua da Consolação 3638 apto11",  cep:"01416-906", obs:"", mensalidade:0, status:"ativa" },
+  { id:31, nome:"Ivany Kabbach",                    cpf:"012.612.838-30", celular:"", email:"ivanykabbach@terra.com.br",      logradouro:"Rua Irauna 764",                 cep:"04518-060", obs:"", mensalidade:0, status:"ativa" },
+];
+
+// ====== STORAGE ======
+function getDB() {
+  try {
+    const d = localStorage.getItem('maluDB');
+    if (d) return JSON.parse(d);
+  } catch(e) {}
+  return {
+    alunas: JSON.parse(JSON.stringify(ALUNAS_INICIAL)),
+    registros: [],
+    config: { precoAtelie: 0, precoAluna: 0, mensalidade: 0, mes: hoje() },
+    relStatus: {}
+  };
+}
+function saveDB(db) {
+  try { localStorage.setItem('maluDB', JSON.stringify(db)); } catch(e) {}
+}
+function hoje() {
+  const d = new Date();
+  return d.toISOString().split('T')[0];
+}
+function mesAtual() {
+  return db.config.mes ? db.config.mes.substring(0,7) : hoje().substring(0,7);
+}
+function formatMes(ym) {
+  if (!ym) return '';
+  const [y, m] = ym.split('-');
+  const nomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  return nomes[parseInt(m)-1] + ' ' + y;
+}
+function siglas(nome) {
+  const parts = nome.trim().split(' ').filter(p => p.length > 2);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return nome.substring(0,2).toUpperCase();
+}
+
+let db = getDB();
+let alunaAtual = null;
+let tipoArgilaAtual = 'atelie';
+let qtdQueima = 1, qtdPecas = 1;
+let fotoBase64 = null;
+
+// ====== NAV ======
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function atualizarMes() {
+  const m = mesAtual();
+  document.getElementById('home-mes').textContent = formatMes(m);
+  const el = document.getElementById('rel-mes');
+  if (el) el.textContent = formatMes(m);
+}
+
+// ====== PAINEL ======
+function abrirPainel() {
+  renderPainel(db.alunas.filter(a => a.status === 'ativa'));
+  document.getElementById('painel-alunas').classList.add('open');
+  document.getElementById('overlay').style.display = 'block';
+}
+function fecharPainel() {
+  document.getElementById('painel-alunas').classList.remove('open');
+  document.getElementById('overlay').style.display = 'none';
+}
+function filtrarAlunas(val) {
+  const lista = db.alunas.filter(a => a.status === 'ativa' && a.nome.toLowerCase().includes(val.toLowerCase()));
+  renderPainel(lista);
+}
+function renderPainel(lista) {
+  const el = document.getElementById('painel-list');
+  el.innerHTML = lista.map(a => `
+    <button class="aluna-item" onclick="selecionarAluna(${a.id})">
+      <div class="avatar">${siglas(a.nome)}</div>
+      <div style="flex:1;"><p style="font-size:14px;font-weight:600;font-family:sans-serif;color:var(--text);">${a.nome}</p></div>
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M4.5 3l4 4-4 4" stroke="#bbb" stroke-width="1.4" stroke-linecap="round"/></svg>
+    </button>
+  `).join('');
+}
+function selecionarAluna(id) {
+  fecharPainel();
+  alunaAtual = db.alunas.find(a => a.id === id);
+  document.getElementById('aluna-avatar-header').textContent = siglas(alunaAtual.nome);
+  document.getElementById('aluna-nome-header').textContent = alunaAtual.nome;
+  document.getElementById('aluna-mes-header').textContent = formatMes(mesAtual());
+  goTo('screen-aluna');
+}
+
+// ====== ARGILA ======
+function selectTipo(t) {
+  tipoArgilaAtual = t;
+  document.getElementById('tipo-atelie').className = 'tipo-btn' + (t==='atelie'?' active':'');
+  document.getElementById('tipo-aluna').className = 'tipo-btn' + (t==='aluna'?' active':'');
+}
+function salvarArgila() {
+  const desc = document.getElementById('argila-desc').value.trim();
+  const peso = parseFloat(document.getElementById('argila-peso').value);
+  const data = document.getElementById('argila-data').value;
+  if (!desc || !peso || !data) { toast('Preencha todos os campos'); return; }
+  const preco = tipoArgilaAtual === 'atelie' ? (db.config.precoAtelie||0) : (db.config.precoAluna||0);
+  db.registros.push({ id: Date.now(), alunaId: alunaAtual.id, tipo: 'argila', desc, peso, tipoArgila: tipoArgilaAtual, preco, valor: +(peso * preco).toFixed(2), data, mes: mesAtual() });
+  saveDB(db);
+  document.getElementById('argila-desc').value = '';
+  document.getElementById('argila-peso').value = '';
+  toast('Registro salvo!');
+  renderArgilaLista();
+}
+function renderArgilaLista() {
+  const lista = db.registros.filter(r => r.alunaId === alunaAtual?.id && r.tipo === 'argila' && r.mes === mesAtual());
+  const el = document.getElementById('argila-lista');
+  if (!lista.length) { el.innerHTML = '<p style="padding:12px 14px;font-size:13px;color:var(--text3);font-family:sans-serif;">nenhum registro ainda</p>'; document.getElementById('argila-total-box').style.display='none'; return; }
+  el.innerHTML = lista.map(r => `
+    <div class="reg-item">
+      <div><p style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--text);">${r.desc}</p><p style="font-size:11px;color:var(--text2);font-family:sans-serif;">${fmtData(r.data)} · ${r.tipoArgila==='atelie'?'do ateliê':'da aluna'} · ${r.peso.toFixed(3)} kg</p></div>
+      <span style="font-size:13px;color:var(--roxo);font-weight:600;font-family:sans-serif;white-space:nowrap;">${r.valor>0?'R$ '+r.valor.toFixed(2).replace('.',','):'—'}</span>
+    </div>`).join('');
+  const total = lista.reduce((s,r)=>s+r.valor,0);
+  document.getElementById('argila-total').textContent = total.toFixed(3).replace('.',',') + ' kg / R$ ' + total.toFixed(2).replace('.',',');
+  document.getElementById('argila-total-box').style.display = 'block';
+}
+
+// ====== QUEIMA ======
+function salvarQueima() {
+  const desc = document.getElementById('queima-desc').value.trim();
+  const valor = parseFloat(document.getElementById('queima-valor').value);
+  const data = document.getElementById('queima-data').value;
+  if (!desc || !valor || !data) { toast('Preencha todos os campos'); return; }
+  db.registros.push({ id: Date.now(), alunaId: alunaAtual.id, tipo: 'queima', desc, qtd: qtdQueima, valorUnit: valor, valor: +(qtdQueima * valor).toFixed(2), foto: fotoBase64, data, mes: mesAtual() });
+  saveDB(db);
+  document.getElementById('queima-desc').value = '';
+  document.getElementById('queima-valor').value = '';
+  document.getElementById('queima-total').textContent = 'R$ 0,00';
+  qtdQueima = 1; document.getElementById('queima-qtd-val').textContent = '1';
+  removerFoto();
+  toast('Registro salvo!');
+  renderQueimaLista();
+}
+function renderQueimaLista() {
+  const lista = db.registros.filter(r => r.alunaId === alunaAtual?.id && r.tipo === 'queima' && r.mes === mesAtual());
+  const el = document.getElementById('queima-lista');
+  if (!lista.length) { el.innerHTML = '<p style="padding:12px 14px;font-size:13px;color:var(--text3);font-family:sans-serif;">nenhum registro ainda</p>'; return; }
+  el.innerHTML = lista.map(r => `
+    <div class="reg-item" style="gap:10px;">
+      ${r.foto ? `<img src="${r.foto}" style="width:40px;height:40px;border-radius:7px;object-fit:cover;flex-shrink:0;">` : `<div style="width:40px;height:40px;border-radius:7px;background:var(--laranja-light);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;">🔥</div>`}
+      <div style="flex:1;"><p style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--text);">${r.desc}</p><p style="font-size:11px;color:var(--text2);font-family:sans-serif;">${fmtData(r.data)} · ${r.qtd} un.</p></div>
+      <span style="font-size:13px;color:var(--laranja);font-weight:600;font-family:sans-serif;white-space:nowrap;">R$ ${r.valor.toFixed(2).replace('.',',')}</span>
+    </div>`).join('');
+}
+
+// ====== PEÇAS ======
+function salvarPeca() {
+  const desc = document.getElementById('pecas-desc').value.trim();
+  const valor = parseFloat(document.getElementById('pecas-valor').value);
+  const data = document.getElementById('pecas-data').value;
+  if (!desc || !valor || !data) { toast('Preencha todos os campos'); return; }
+  db.registros.push({ id: Date.now(), alunaId: alunaAtual.id, tipo: 'peca', desc, qtd: qtdPecas, valorUnit: valor, valor: +(qtdPecas * valor).toFixed(2), data, mes: mesAtual() });
+  saveDB(db);
+  document.getElementById('pecas-desc').value = '';
+  document.getElementById('pecas-valor').value = '';
+  document.getElementById('pecas-total').textContent = 'R$ 0,00';
+  qtdPecas = 1; document.getElementById('pecas-qtd-val').textContent = '1';
+  toast('Registro salvo!');
+  renderPecasLista();
+}
+function renderPecasLista() {
+  const lista = db.registros.filter(r => r.alunaId === alunaAtual?.id && r.tipo === 'peca' && r.mes === mesAtual());
+  const el = document.getElementById('pecas-lista');
+  if (!lista.length) { el.innerHTML = '<p style="padding:12px 14px;font-size:13px;color:var(--text3);font-family:sans-serif;">nenhum registro ainda</p>'; return; }
+  el.innerHTML = lista.map(r => `
+    <div class="reg-item">
+      <div><p style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--text);">${r.desc}</p><p style="font-size:11px;color:var(--text2);font-family:sans-serif;">${fmtData(r.data)} · ${r.qtd} un.</p></div>
+      <span style="font-size:13px;color:var(--verde);font-weight:600;font-family:sans-serif;white-space:nowrap;">R$ ${r.valor.toFixed(2).replace('.',',')}</span>
+    </div>`).join('');
+}
+
+// ====== QTD / TOTAL ======
+function alterarQtd(ctx, d) {
+  if (ctx === 'queima') { qtdQueima = Math.max(1, qtdQueima + d); document.getElementById('queima-qtd-val').textContent = qtdQueima; calcTotal('queima'); }
+  else { qtdPecas = Math.max(1, qtdPecas + d); document.getElementById('pecas-qtd-val').textContent = qtdPecas; calcTotal('pecas'); }
+}
+function calcTotal(ctx) {
+  const val = parseFloat(document.getElementById(ctx+'-valor').value) || 0;
+  const qtd = ctx === 'queima' ? qtdQueima : qtdPecas;
+  document.getElementById(ctx+'-total').textContent = 'R$ ' + (qtd * val).toFixed(2).replace('.',',');
+}
+
+// ====== FOTO ======
+function carregarFoto(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    fotoBase64 = e.target.result;
+    document.getElementById('foto-img').src = fotoBase64;
+    document.getElementById('foto-area').style.display = 'none';
+    document.getElementById('foto-preview').style.display = 'flex';
+  };
+  reader.readAsDataURL(file);
+}
+function removerFoto() {
+  fotoBase64 = null;
+  document.getElementById('foto-area').style.display = 'flex';
+  document.getElementById('foto-preview').style.display = 'none';
+  document.getElementById('foto-input').value = '';
+}
+
+// ====== FICHA ======
+function goFicha() { renderFicha(); goTo('screen-ficha'); }
+function calcTotalAluna(id, mes) {
+  const regs = db.registros.filter(r => r.alunaId === id && r.mes === mes);
+  const a = db.alunas.find(a => a.id === id);
+  const mens = a.mensalidade || db.config.mensalidade || 0;
+  const argila = regs.filter(r=>r.tipo==='argila').reduce((s,r)=>s+r.valor,0);
+  const queima = regs.filter(r=>r.tipo==='queima').reduce((s,r)=>s+r.valor,0);
+  const peca = regs.filter(r=>r.tipo==='peca').reduce((s,r)=>s+r.valor,0);
+  return +(mens + argila + queima + peca).toFixed(2);
+}
+function renderFicha() {
+  const mes = mesAtual();
+  const a = alunaAtual;
+  document.getElementById('ficha-sub').textContent = a.nome + ' · ' + formatMes(mes);
+  const regs = db.registros.filter(r => r.alunaId === a.id && r.mes === mes);
+  const mens = a.mensalidade || db.config.mensalidade || 0;
+  const argilas = regs.filter(r=>r.tipo==='argila');
+  const queimas = regs.filter(r=>r.tipo==='queima');
+  const pecas = regs.filter(r=>r.tipo==='peca');
+  const totalArgila = argilas.reduce((s,r)=>s+r.valor,0);
+  const totalQueima = queimas.reduce((s,r)=>s+r.valor,0);
+  const totalPeca = pecas.reduce((s,r)=>s+r.valor,0);
+  const total = +(mens + totalArgila + totalQueima + totalPeca).toFixed(2);
+
+  let html = '';
+  // mensalidade
+  html += `<div class="ficha-section"><div class="ficha-section-header"><span style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--text);">Mensalidade</span><span style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--text);">R$ ${mens.toFixed(2).replace('.',',')}</span></div></div>`;
+  // argila
+  if (argilas.length) {
+    const totalKg = argilas.reduce((s,r)=>s+(r.peso||0),0);
+    html += `<div class="ficha-section"><div class="ficha-section-header" style="background:var(--roxo-light);">
+      <div style="display:flex;align-items:center;gap:7px;"><div style="width:7px;height:7px;border-radius:50%;background:var(--roxo-mid);"></div><span style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--roxo);">Argila</span></div>
+      <span style="font-size:12px;font-family:sans-serif;color:var(--roxo);">${totalKg.toFixed(3).replace('.',',')} kg</span>
+    </div>`;
+    argilas.forEach(r => {
+      html += `<div class="ficha-item"><div style="flex:1;"><p style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--text);">${r.desc}</p><p style="font-size:11px;color:var(--text2);font-family:sans-serif;">${fmtData(r.data)} · ${r.tipoArgila==='atelie'?'do ateliê':'da aluna'} · ${r.peso?.toFixed(3)} kg</p></div><span style="font-size:13px;font-family:sans-serif;color:var(--text);white-space:nowrap;">${r.valor>0?'R$ '+r.valor.toFixed(2).replace('.',','):'—'}</span></div>`;
+    });
+    html += `<div style="padding:8px 14px;display:flex;justify-content:space-between;"><span style="font-size:12px;color:var(--text2);font-family:sans-serif;">subtotal argila</span><span style="font-size:13px;font-weight:600;color:var(--roxo);font-family:sans-serif;">R$ ${totalArgila.toFixed(2).replace('.',',')}</span></div></div>`;
+  }
+  // queima
+  if (queimas.length) {
+    html += `<div class="ficha-section"><div class="ficha-section-header" style="background:var(--laranja-light);">
+      <div style="display:flex;align-items:center;gap:7px;"><div style="width:7px;height:7px;border-radius:50%;background:var(--laranja);"></div><span style="font-size:13px;font-weight:600;font-family:sans-serif;color:#993C1D;">Queima de esmalte</span></div>
+      <span style="font-size:12px;font-family:sans-serif;color:#993C1D;">${queimas.reduce((s,r)=>s+r.qtd,0)} peças</span>
+    </div>`;
+    queimas.forEach(r => {
+      html += `<div class="ficha-item">${r.foto?`<img src="${r.foto}" style="width:40px;height:40px;border-radius:7px;object-fit:cover;flex-shrink:0;">`:'<div style="width:40px;height:40px;border-radius:7px;background:var(--laranja-light);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;">🔥</div>'}<div style="flex:1;"><p style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--text);">${r.desc}</p><p style="font-size:11px;color:var(--text2);font-family:sans-serif;">${fmtData(r.data)} · ${r.qtd} un.</p></div><span style="font-size:13px;font-family:sans-serif;color:var(--text);white-space:nowrap;">R$ ${r.valor.toFixed(2).replace('.',',')}</span></div>`;
+    });
+    html += `<div style="padding:8px 14px;display:flex;justify-content:space-between;"><span style="font-size:12px;color:var(--text2);font-family:sans-serif;">subtotal queima</span><span style="font-size:13px;font-weight:600;color:#993C1D;font-family:sans-serif;">R$ ${totalQueima.toFixed(2).replace('.',',')}</span></div></div>`;
+  }
+  // peças
+  if (pecas.length) {
+    html += `<div class="ficha-section"><div class="ficha-section-header" style="background:var(--verde-light);">
+      <div style="display:flex;align-items:center;gap:7px;"><div style="width:7px;height:7px;border-radius:50%;background:var(--verde);"></div><span style="font-size:13px;font-weight:600;font-family:sans-serif;color:#085041;">Peças do ateliê</span></div>
+      <span style="font-size:12px;font-family:sans-serif;color:#085041;">${pecas.reduce((s,r)=>s+r.qtd,0)} peças</span>
+    </div>`;
+    pecas.forEach(r => {
+      html += `<div class="ficha-item"><div style="flex:1;"><p style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--text);">${r.desc}</p><p style="font-size:11px;color:var(--text2);font-family:sans-serif;">${fmtData(r.data)} · ${r.qtd} un.</p></div><span style="font-size:13px;font-family:sans-serif;color:var(--text);white-space:nowrap;">R$ ${r.valor.toFixed(2).replace('.',',')}</span></div>`;
+    });
+    html += `<div style="padding:8px 14px;display:flex;justify-content:space-between;"><span style="font-size:12px;color:var(--text2);font-family:sans-serif;">subtotal peças</span><span style="font-size:13px;font-weight:600;color:#085041;font-family:sans-serif;">R$ ${totalPeca.toFixed(2).replace('.',',')}</span></div></div>`;
+  }
+  // total
+  html += `<div class="total-bar"><p style="font-size:15px;">Total do mês</p><p style="font-size:20px;font-weight:600;">R$ ${total.toFixed(2).replace('.',',')}</p></div>`;
+  document.getElementById('ficha-content').innerHTML = html;
+}
+function compartilharFicha() {
+  if (!alunaAtual) return;
+  const mes = formatMes(mesAtual());
+  const total = calcTotalAluna(alunaAtual.id, mesAtual());
+  const texto = `Olá ${alunaAtual.nome.split(' ')[0]}! Segue sua ficha de ${mes}. Total: R$ ${total.toFixed(2).replace('.',',')}`;
+  const url = 'https://wa.me/?text=' + encodeURIComponent(texto);
+  window.open(url, '_blank');
+}
+
+// ====== RELATÓRIO ======
+function renderRelatorio() {
+  const mes = mesAtual();
+  document.getElementById('rel-mes').textContent = formatMes(mes);
+  const alunas = db.alunas.filter(a => a.status === 'ativa');
+  let totalGeral = 0;
+  let totalRecebido = 0;
+  const tbody = document.getElementById('rel-body');
+  tbody.innerHTML = alunas.map(a => {
+    const total = calcTotalAluna(a.id, mes);
+    totalGeral += total;
+    const key = `${a.id}-${mes}`;
+    const st = db.relStatus[key] || { ficha: 'pendente', pago: false };
+    if (st.pago) totalRecebido += total;
+    const fichaBadge = st.ficha === 'enviada'
+      ? `<span class="badge badge-green">enviada</span>`
+      : `<span class="badge badge-amber">pendente</span>`;
+    const pagoBtn = `<button onclick="togglePgto(${a.id})" style="font-size:10px;padding:3px 8px;border-radius:10px;border:none;cursor:pointer;${st.pago?'background:var(--verde-light);color:#085041;':'background:var(--amber-light);color:#633806;'}">${st.pago?'pago':'pendente'}</button>`;
+    return `<tr>
+      <td><p style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--text);margin:0;">${a.nome.split(' ')[0]} ${a.nome.split(' ')[1]||''}</p><p style="font-size:10px;color:var(--text3);font-family:sans-serif;margin:0;">${db.registros.filter(r=>r.alunaId===a.id&&r.mes===mes).length} reg.</p></td>
+      <td style="text-align:right;font-weight:600;font-family:sans-serif;">R$ ${total.toFixed(0)}</td>
+      <td style="text-align:center;">${fichaBadge}</td>
+      <td style="text-align:center;">${pagoBtn}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('rel-total').textContent = 'R$ ' + totalGeral.toFixed(2).replace('.',',');
+  document.getElementById('rel-recebido').textContent = 'R$ ' + totalRecebido.toFixed(2).replace('.',',');
+}
+function togglePgto(id) {
+  const key = `${id}-${mesAtual()}`;
+  if (!db.relStatus[key]) db.relStatus[key] = { ficha: 'pendente', pago: false };
+  db.relStatus[key].pago = !db.relStatus[key].pago;
+  saveDB(db);
+  renderRelatorio();
+}
+
+// ====== CONFIG ======
+function salvarConfig() {
+  db.config.precoAtelie = parseFloat(document.getElementById('config-preco-atelie').value) || 0;
+  db.config.precoAluna = parseFloat(document.getElementById('config-preco-aluna').value) || 0;
+  db.config.mensalidade = parseFloat(document.getElementById('config-mensalidade').value) || 0;
+  db.config.mes = document.getElementById('config-mes').value || hoje();
+  saveDB(db);
+  atualizarLabelsArgila();
+}
+function carregarConfig() {
+  document.getElementById('config-preco-atelie').value = db.config.precoAtelie || '';
+  document.getElementById('config-preco-aluna').value = db.config.precoAluna || '';
+  document.getElementById('config-mensalidade').value = db.config.mensalidade || '';
+  document.getElementById('config-mes').value = db.config.mes || hoje().substring(0,7);
+}
+function atualizarLabelsArgila() {
+  const pa = db.config.precoAtelie ? `R$ ${db.config.precoAtelie}/kg` : 'preço não definido';
+  const pb = db.config.precoAluna ? `R$ ${db.config.precoAluna}/kg` : 'preço não definido';
+  document.getElementById('preco-atelie-label').textContent = pa;
+  document.getElementById('preco-aluna-label').textContent = pb;
+}
+
+// ====== CADASTRO ======
+function abrirCadastroNovo() {
+  fecharPainel();
+  document.getElementById('cad-titulo').textContent = 'Nova aluna';
+  ['cad-nome','cad-cpf','cad-celular','cad-email','cad-cep','cad-logradouro','cad-numero','cad-complemento','cad-bairro','cad-mensalidade','cad-obs'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('cad-inicio').value = hoje();
+  document.getElementById('cad-avatar-preview').textContent = '?';
+  selectStatus('ativa');
+  goTo('screen-cadastro');
+}
+function atualizarAvatarPreview() {
+  const nome = document.getElementById('cad-nome').value;
+  document.getElementById('cad-avatar-preview').textContent = nome ? siglas(nome) : '?';
+}
+function selectStatus(s) {
+  document.getElementById('status-ativa').className = 'tipo-btn' + (s==='ativa'?' active':'');
+  document.getElementById('status-inativa').className = 'tipo-btn' + (s==='inativa'?' active':'');
+  document.getElementById('status-ativa').dataset.sel = s==='ativa'?'1':'';
+}
+function salvarCadastro() {
+  const nome = document.getElementById('cad-nome').value.trim();
+  if (!nome) { toast('Informe o nome'); return; }
+  const novo = {
+    id: Date.now(),
+    nome, cpf: document.getElementById('cad-cpf').value.trim(),
+    celular: document.getElementById('cad-celular').value.trim(),
+    email: document.getElementById('cad-email').value.trim(),
+    logradouro: document.getElementById('cad-logradouro').value.trim(),
+    cep: document.getElementById('cad-cep').value.trim(),
+    mensalidade: parseFloat(document.getElementById('cad-mensalidade').value) || 0,
+    obs: document.getElementById('cad-obs').value.trim(),
+    status: document.getElementById('status-ativa').dataset.sel ? 'ativa' : 'inativa'
+  };
+  db.alunas.push(novo);
+  saveDB(db);
+  toast('Aluna cadastrada!');
+  goTo('screen-home');
+}
+
+// ====== UTILS ======
+function fmtData(d) {
+  if (!d) return '';
+  const [y,m,dd] = d.split('-');
+  return dd + '/' + m;
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ====== INIT ======
+function init() {
+  const d = hoje();
+  document.getElementById('argila-data').value = d;
+  document.getElementById('queima-data').value = d;
+  document.getElementById('pecas-data').value = d;
+  carregarConfig();
+  atualizarMes();
+  atualizarLabelsArgila();
+
+  // atualizar relatório quando abrir
+  const origGoTo = goTo;
+  window.goTo = function(id) {
+    origGoTo(id);
+    if (id === 'screen-relatorio') renderRelatorio();
+    if (id === 'screen-argila') { document.getElementById('argila-sub').textContent = (alunaAtual?.nome||'') + ' · ' + formatMes(mesAtual()); renderArgilaLista(); }
+    if (id === 'screen-queima') { document.getElementById('queima-sub').textContent = (alunaAtual?.nome||'') + ' · ' + formatMes(mesAtual()); renderQueimaLista(); }
+    if (id === 'screen-pecas') { document.getElementById('pecas-sub').textContent = (alunaAtual?.nome||'') + ' · ' + formatMes(mesAtual()); renderPecasLista(); }
+  };
+}
+init();
+</script>
+</div>
+</body>
+</html>
