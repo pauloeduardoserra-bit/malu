@@ -797,16 +797,27 @@ const ALUNAS_INICIAL = [
 
 // ====== STORAGE ======
 function getDB() {
+  let saved = null;
   try {
     const d = localStorage.getItem('maluDB');
-    if (d) return JSON.parse(d);
+    if (d) saved = JSON.parse(d);
   } catch(e) {}
-  return {
-    alunas: JSON.parse(JSON.stringify(ALUNAS_INICIAL)),
-    registros: [],
-    config: { precoAtelie: 0, precoAluna: 0, mensalidade: 0, mes: hoje() },
-    relStatus: {}
-  };
+  if (!saved) {
+    return {
+      alunas: JSON.parse(JSON.stringify(ALUNAS_INICIAL)),
+      registros: [],
+      config: { precoAtelie: 0, precoAluna: 0, mensalidade: 0, mes: hoje() },
+      relStatus: {}
+    };
+  }
+  // Garante que todas as alunas iniciais estejam sempre presentes
+  const idsExistentes = new Set(saved.alunas.map(a => a.id));
+  ALUNAS_INICIAL.forEach(a => {
+    if (!idsExistentes.has(a.id)) saved.alunas.push(JSON.parse(JSON.stringify(a)));
+  });
+  // Ordena por nome
+  saved.alunas.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  return saved;
 }
 function saveDB(db) {
   try { localStorage.setItem('maluDB', JSON.stringify(db)); } catch(e) {}
@@ -1167,6 +1178,7 @@ function salvarCadastro() {
     status: document.getElementById('status-ativa').dataset.sel ? 'ativa' : 'inativa'
   };
   db.alunas.push(novo);
+  db.alunas.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   saveDB(db);
   toast('Aluna cadastrada!');
   goTo('screen-home');
