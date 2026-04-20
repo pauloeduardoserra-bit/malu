@@ -314,6 +314,10 @@
         </tr></tfoot>
       </table>
     </div>
+    <button class="btn-outline" onclick="exportarExcel()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="2" stroke="var(--roxo)" stroke-width="1.3"/><path d="M5 5h6M5 8h6M5 11h4" stroke="var(--roxo)" stroke-width="1.3" stroke-linecap="round"/><path d="M13 9v4a1 1 0 01-1 1H4a1 1 0 01-1-1V9" stroke="var(--roxo)" stroke-width="1.3" stroke-linecap="round"/><path d="M10 7v2M10 7l-1.5-1.5M10 7l1.5-1.5" stroke="var(--roxo)" stroke-width="1.2" stroke-linecap="round"/></svg>
+      Exportar planilha do mês
+    </button>
   </div>
   <div class="safe-bottom"></div>
 </div>
@@ -563,6 +567,15 @@ function renderArgilaLista(){
   const lista=db.registros.filter(r=>r.alunaId===alunaAtual?.id&&r.tipo==='argila'&&r.mes===mesAtual());
   const el=document.getElementById('argila-lista');
   if(!lista.length){el.innerHTML='<p style="padding:12px 14px;font-size:13px;color:var(--text3);font-family:sans-serif;">nenhum registro ainda</p>';document.getElementById('argila-total-box').style.display='none';return;}
+  // Recalcula valor de registros que foram salvos sem preço configurado
+  let salvou=false;
+  lista.forEach(r=>{
+    if(r.valor===0&&r.preco===0){
+      const preco=r.tipoArgila==='atelie'?(db.config.precoAtelie||0):(db.config.precoAluna||0);
+      if(preco>0){r.preco=preco;r.valor=+(r.peso*(r.qtd||1)*preco).toFixed(2);salvou=true;}
+    }
+  });
+  if(salvou)saveDB(db);
   el.innerHTML=lista.map(r=>`
     <div class="reg-item">
       <div style="flex:1;min-width:0;"><p style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--text);">${r.desc}</p><p style="font-size:11px;color:var(--text2);font-family:sans-serif;">${fmtData(r.data)} · ${r.tipoArgila==='atelie'?'do ateliê':'da aluna'} · ${(r.peso*(r.qtd||1)).toFixed(3)} kg</p></div>
@@ -574,7 +587,8 @@ function renderArgilaLista(){
     </div>`).join('');
   const tKg=lista.reduce((s,r)=>s+(r.peso*(r.qtd||1)),0);
   const tVal=lista.reduce((s,r)=>s+r.valor,0);
-  document.getElementById('argila-total').textContent=tKg.toFixed(3)+' kg · '+fmtR(tVal);
+  const temValor=lista.some(r=>r.valor>0);
+  document.getElementById('argila-total').textContent=tKg.toFixed(3)+' kg'+(temValor?' · '+fmtR(tVal):'');
   document.getElementById('argila-total-box').style.display='block';
 }
 
@@ -943,6 +957,56 @@ function salvarCadastro(){
   if(cadEditId){const idx=db.alunas.findIndex(a=>a.id===cadEditId);if(idx>=0)db.alunas[idx]={...db.alunas[idx],...dados};toast('Cadastro atualizado!');}
   else{dados.id=Date.now();db.alunas.push(dados);toast('Aluna cadastrada!');}
   db.alunas.sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));saveDB(db);cadEditId=null;goTo('screen-alunas-lista');renderListaAlunas(db.alunas);
+}
+
+function exportarExcel(){
+  const mes=mesAtual();
+  const alunas=db.alunas.filter(a=>a.status==='ativa');
+
+  // Monta CSV com separador ; (compatível com Excel Brasil)
+  const cabecalho=['Nome','CPF','Endereço','E-mail',`Valor ${formatMes(mes)}`,'Status Pgto'];
+  const linhas=[cabecalho];
+
+  alunas.forEach(a=>{
+    const total=calcTotalAluna(a.id,mes);
+    const key=`${a.id}-${mes}`;
+    const st=db.relStatus[key]||{pago:false};
+    const endereco=[a.logradouro,a.numero,a.complemento,a.bairro,a.cep].filter(Boolean).join(', ');
+    linhas.push([
+      a.nome,
+      a.cpf||'',
+      endereco||'',
+      a.email||'',
+      total.toFixed(2).replace('.',','),
+      st.pago?'Pago':'Pendente'
+    ]);
+  });
+
+  // Linha de total
+  linhas.push([]);
+  const totalGeral=alunas.reduce((s,a)=>s+calcTotalAluna(a.id,mes),0);
+  linhas.push(['TOTAL','','','',totalGeral.toFixed(2).replace('.',','),'']);
+
+  // Converte para string CSV
+  const csv='\uFEFF'+ // BOM para Excel reconhecer UTF-8
+    linhas.map(row=>row.map(cell=>`"${String(cell).replace(/"/g,'""')}"`).join(';')).join('\r\n');
+
+  // Cria arquivo e compartilha
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const fileName=`atelie-malu-serra-${mes}.csv`;
+  const file=new File([blob],fileName,{type:'text/csv'});
+
+  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+    navigator.share({files:[file],title:`Ateliê Malu Serra — ${formatMes(mes)}`}).catch(e=>{if(e.name!=='AbortError')baixarCSV(blob,fileName);});
+  } else {
+    baixarCSV(blob,fileName);
+  }
+}
+function baixarCSV(blob,fileName){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=fileName;a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
 function init(){
