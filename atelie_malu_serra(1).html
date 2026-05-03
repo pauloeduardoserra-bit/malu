@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Ateliê Malu Serra</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --roxo: #3C3489; --roxo-light: #EEEDFE; --roxo-mid: #534AB7;
+    --laranja: #D85A30; --laranja-light: #FAECE7;
+    --verde: #0F6E56; --verde-light: #E1F5EE;
+    --amber: #BA7517; --amber-light: #FAEEDA;
+    --bg: #F5F4F0; --card: #FFFFFF; --border: rgba(0,0,0,0.09);
+    --text: #1a1a1a; --text2: #666; --text3: #999;
+    --radius: 14px; --radius-sm: 8px;
+  }
+  body { font-family: Georgia, serif; background: var(--bg); min-height: 100vh; display: flex; justify-content: center; }
+  #app { width: 100%; max-width: 430px; min-height: 100vh; background: var(--bg); position: relative; overflow: hidden; }
+  .screen { display: none; flex-direction: column; min-height: 100vh; animation: fadeIn 0.2s ease; }
+  .screen.active { display: flex; }
+  @keyframes fadeIn { from { opacity:0; transform:translateX(10px); } to { opacity:1; transform:translateX(0); } }
+  .header { background: var(--roxo); padding: 52px 20px 20px; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .header-title { color: white; font-size: 17px; font-weight: normal; }
+  .header-sub { color: rgba(255,255,255,0.6); font-size: 11px; font-family: sans-serif; margin-top: 1px; }
+  .btn-back, .btn-icon { width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,0.15); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .home-header { background: var(--roxo); padding: 52px 20px 20px; display: flex; align-items: flex-end; justify-content: space-between; }
+  .logo-main { color: white; font-size: 26px; letter-spacing: 0.1em; }
+  .logo-sub { color: rgba(255,255,255,0.6); font-size: 9px; letter-spacing: 0.28em; font-family: sans-serif; margin-top: 3px; }
+  .home-actions { display: flex; gap: 8px; }
+  .content { padding: 16px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+  .card { background: var(--card); border-radius: var(--radius); border: 0.5px solid var(--border); overflow: hidden; }
+  .section-label { font-size: 10px; color: var(--text3); letter-spacing: 0.08em; font-family: sans-serif; padding: 0 2px; }
+  .aluna-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--card); border-radius: var(--radius); border: 0.5px solid var(--border); cursor: pointer; width: 100%; text-align: left; }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--roxo-light); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; color: var(--roxo); flex-shrink: 0; font-family: sans-serif; }
+  .avatar-lg { width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; color: white; flex-shrink: 0; font-family: sans-serif; }
+  .badge { font-size: 10px; padding: 3px 8px; border-radius: 10px; font-family: sans-serif; white-space: nowrap; }
+  .badge-green { background: var(--verde-light); color: #085041; }
+  .badge-amber { background: var(--amber-light); color: #633806; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  label { font-size: 12px; color: var(--text2); font-family: sans-serif; }
+  input, textarea, select { width: 100%; padding: 10px 12px; font-size: 14px; font-family: sans-serif; border: 0.5px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); outline: none; }
+  input:focus, textarea:focus { border-color: var(--roxo); }
+  textarea { resize: none; }
+  .btn-primary { width: 100%; padding: 14px; background: var(--roxo); color: white; border: none; border-radius: var(--radius); font-size: 15px; font-family: sans-serif; cursor: pointer; }
+  .btn-outline { width: 100%; padding: 13px; background: transparent; color: var(--roxo); border: 1.5px solid var(--roxo); border-radius: var(--radius); font-size: 15px; font-family: sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .tipo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tipo-btn { padding: 12px 8px; border-radius: var(--radius-sm); border: 0.5px solid var(--border); background: var(--bg); cursor: pointer; text-align: center; font-family: sans-serif; font-size: 13px; color: var(--text); }
+  .tipo-btn.active { border: 2px solid var(--roxo); background: var(--roxo-light); color: var(--roxo); }
+  .qtd-control { display: flex; align-items: center; background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+  .qtd-btn { width: 34px; height: 38px; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--text2); }
+  .qtd-val { width: 34px; text-align: center; font-size: 15px; font-weight: bold; color: var(--text); font-family: sans-serif; }
+  .search-bar { display: flex; align-items: center; gap: 8px; background: var(--card); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 9px 12px; }
+  .search-bar input { border: none; background: transparent; padding: 0; font-size: 14px; }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-card { background: var(--card); border-radius: var(--radius-sm); border: 0.5px solid var(--border); padding: 10px 12px; }
+  .stat-label { font-size: 10px; color: var(--text3); font-family: sans-serif; margin-bottom: 3px; }
+  .stat-val { font-size: 18px; color: var(--text); font-family: sans-serif; font-weight: 600; }
+  .reg-item { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 0.5px solid var(--border); }
+  .reg-item:last-child { border-bottom: none; }
+  .ficha-section { background: var(--card); border-radius: var(--radius); border: 0.5px solid var(--border); overflow: hidden; margin-bottom: 10px; }
+  .ficha-section-header { padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 0.5px solid var(--border); }
+  .ficha-item { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 0.5px solid var(--border); }
+  .ficha-item:last-child { border-bottom: none; }
+  .rel-table { width: 100%; border-collapse: collapse; font-family: sans-serif; }
+  .rel-table th { font-size: 10px; color: var(--text3); letter-spacing: 0.05em; padding: 8px 8px; text-align: left; border-bottom: 0.5px solid var(--border); }
+  .rel-table td { font-size: 12px; padding: 9px 8px; border-bottom: 0.5px solid var(--border); vertical-align: middle; }
+  .rel-table tr:last-child td { border-bottom: none; }
+  .rel-table tfoot td { font-weight: 700; padding: 10px 8px; border-top: 1.5px solid var(--border); background: var(--bg); font-size: 13px; }
+  #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1a1a1a; color: white; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-family: sans-serif; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; white-space: nowrap; }
+  #toast.show { opacity: 1; }
+  .safe-bottom { height: 24px; flex-shrink: 0; }
+  #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; }
+  #painel-alunas { display: none; position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: var(--card); border-radius: 18px 18px 0 0; z-index: 101; max-height: 75vh; flex-direction: column; }
+  #painel-alunas.open { display: flex; }
+  .painel-handle { padding: 12px 0 8px; display: flex; justify-content: center; flex-shrink: 0; }
+  .painel-list { overflow-y: auto; padding: 0 16px 24px; display: flex; flex-direction: column; gap: 6px; }
+  .foto-area { width: 100%; height: 130px; background: var(--bg); border: 0.5px dashed #bbb; border-radius: var(--radius); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
+  .foto-preview { width: 100%; height: 130px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+  .total-bar { background: var(--roxo); border-radius: var(--radius); padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .total-bar p { color: white; font-family: sans-serif; margin: 0; }
+  .month-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 12px 16px 8px; scrollbar-width: none; flex-shrink: 0; }
+  .month-scroll::-webkit-scrollbar { display: none; }
+  .month-chip { padding: 7px 16px; border-radius: 20px; font-size: 13px; font-family: sans-serif; white-space: nowrap; cursor: pointer; border: 0.5px solid var(--border); background: var(--card); color: var(--text2); flex-shrink: 0; }
+  .month-chip.active { background: var(--roxo); color: white; border-color: var(--roxo); font-weight: 600; }
+  .icon-btn { background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; border-radius: 6px; }
+  #edit-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; justify-content: center; }
+  #edit-modal.open { display: flex; }
+  .modal-box { background: var(--card); border-radius: 18px 18px 0 0; width: 100%; max-width: 430px; padding: 20px 16px 34px; display: flex; flex-direction: column; gap: 12px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- HOME -->
+<div id="screen-home" class="screen active">
+  <div class="home-header">
+    <div><div class="logo-main">MALU SERRA</div><div class="logo-sub">ATELIÊ E GALERIA</div></div>
+    <div class="home-actions">
+      <button class="btn-icon" onclick="goTo('screen-alunas-lista')" title="Alunas">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="7" cy="6" r="3" stroke="white" stroke-width="1.4"/><circle cx="13" cy="6" r="2.5" stroke="white" stroke-width="1.4"/><path d="M1 15c0-3 2.5-5 6-5s6 2 6 5" stroke="white" stroke-width="1.4" stroke-linecap="round"/><path d="M13 10c1.8.5 3 1.8 3 5" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </button>
+      <button class="btn-icon" onclick="goTo('screen-relatorio')" title="Relatório">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="1" width="14" height="16" rx="2" stroke="white" stroke-width="1.4"/><path d="M5 6h8M5 9h8M5 12h5" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </button>
+      <button class="btn-icon" onclick="goTo('screen-config')" title="Configurações">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="3" stroke="white" stroke-width="1.4"/><path d="M9 1v2M9 15v2M1 9h2M15 9h2M3.05 3.05l1.41 1.41M13.54 13.54l1.41 1.41M3.05 14.95l1.41-1.41M13.54 4.46l1.41-1.41" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="month-scroll" id="month-scroll"></div>
+  <div style="padding:4px 16px 16px;"><button class="btn-primary" onclick="abrirPainel()">Selecionar aluna</button></div>
+  <div class="safe-bottom"></div>
+</div>
+
+<!-- LISTA ALUNAS -->
+<div id="screen-alunas-lista" class="screen">
+  <div class="header">
+    <button class="btn-back" onclick="goTo('screen-home')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+    <div style="flex:1;"><div class="header-title">Alunas</div></div>
+    <button class="btn-icon" onclick="abrirCadastroNovo()"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+  </div>
+  <div class="content">
+    <div class="search-bar">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4" stroke="#bbb" stroke-width="1.3"/><path d="M9.5 9.5l2.5 2.5" stroke="#bbb" stroke-width="1.3" stroke-linecap="round"/></svg>
+      <input type="text" placeholder="buscar aluna..." oninput="filtrarListaAlunas(this.value)">
+    </div>
+    <div id="alunas-lista-content" style="display:flex;flex-direction:column;gap:8px;"></div>
+  </div>
+  <div class="safe-bottom"></div>
+</div>
+
+<!-- ALUNA -->
+<div id="screen-aluna" class="screen">
+  <div class="header">
+    <button class="btn-back" onclick="goTo('screen-home')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+    <div style="flex:1;text-align:center;">
+      <div id="aluna-avatar-header" class="avatar-lg" style="margin:0 auto 6px;"></div>
+      <div class="header-title" id="aluna-nome-header"></div>
+      <div class="header-sub" id="aluna-mes-header"></div>
+    </div>
+    <button class="btn-icon" onclick="goFicha()"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="2" stroke="white" stroke-width="1.3"/><path d="M5 5h6M5 8h6M5 11h4" stroke="white" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+  </div>
+  <div class="content">
+    <p class="section-label">NOVO REGISTRO</p>
+    <button class="aluna-item" onclick="goTo('screen-argila')" style="border-radius:var(--radius);">
+      <div style="width:44px;height:44px;border-radius:11px;background:var(--roxo-light);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><ellipse cx="11" cy="16" rx="8" ry="4" fill="#AFA9EC"/><path d="M5 15 Q6 6 11 4 Q16 6 17 15" fill="#534AB7"/></svg></div>
+      <div style="flex:1;"><p style="font-size:15px;font-weight:600;color:var(--text);font-family:sans-serif;">Argila</p><p style="font-size:12px;color:var(--text2);font-family:sans-serif;">peso após biscoito</p></div>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="#bbb" stroke-width="1.4" stroke-linecap="round"/></svg>
+    </button>
+    <button class="aluna-item" onclick="goTo('screen-queima')" style="border-radius:var(--radius);">
+      <div style="width:44px;height:44px;border-radius:11px;background:var(--laranja-light);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2 Q15 7 13 11 Q16 8 16 12 Q16 17 11 18 Q6 17 6 12 Q6 8 9 11 Q7 7 11 2Z" fill="#D85A30"/></svg></div>
+      <div style="flex:1;"><p style="font-size:15px;font-weight:600;color:var(--text);font-family:sans-serif;">Queima de esmalte</p><p style="font-size:12px;color:var(--text2);font-family:sans-serif;">peça, quantidade e foto</p></div>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="#bbb" stroke-width="1.4" stroke-linecap="round"/></svg>
+    </button>
+    <button class="aluna-item" onclick="goTo('screen-pecas')" style="border-radius:var(--radius);">
+      <div style="width:44px;height:44px;border-radius:11px;background:var(--verde-light);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="3" y="10" width="6" height="8" rx="1.5" fill="#1D9E75"/><rect x="11" y="6" width="6" height="12" rx="1.5" fill="#5DCAA5"/><rect x="7" y="3" width="5" height="6" rx="1.5" fill="#9FE1CB"/></svg></div>
+      <div style="flex:1;"><p style="font-size:15px;font-weight:600;color:var(--text);font-family:sans-serif;">Peças do ateliê</p><p style="font-size:12px;color:var(--text2);font-family:sans-serif;">peça vendida pelo ateliê</p></div>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="#bbb" stroke-width="1.4" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="safe-bottom"></div>
+</div>
+
+<!-- ARGILA -->
+<div id="screen-argila" class="screen">
+  <div class="header">
+    <button class="btn-back" onclick="goTo('screen-aluna')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+    <div style="flex:1;"><div class="header-title">Argila</div><div class="header-sub" id="argila-sub"></div></div>
+  </div>
+  <div class="content">
+    <div class="form-group"><label>Descrição da peça</label><input type="text" id="argila-desc" placeholder="ex: tigela média, vaso alto..."></div>
+    <div style="display:flex;gap:10px;align-items:flex-end;">
+      <div class="form-group" style="flex:1;"><label>Peso após biscoito (kg)</label><input type="number" id="argila-peso" placeholder="0.000" step="0.001" min="0" style="font-size:20px;font-weight:600;" oninput="calcArgilaValor()"></div>
+      <div class="form-group" style="flex-shrink:0;"><label>Qtd.</label>
+        <div class="qtd-control">
+          <button class="qtd-btn" onclick="alterarQtd('argila',-1)">−</button>
+          <div class="qtd-val" id="argila-qtd-val">1</div>
+          <button class="qtd-btn" onclick="alterarQtd('argila',1)">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-group"><label>Tipo de argila</label>
+      <div class="tipo-grid">
+        <button class="tipo-btn active" id="tipo-atelie" onclick="selectTipo('atelie')"><p style="font-weight:600;margin-bottom:2px;">Do ateliê</p><p id="preco-atelie-label" style="font-size:11px;color:var(--text2)">—</p></button>
+        <button class="tipo-btn" id="tipo-aluna" onclick="selectTipo('aluna')"><p style="font-weight:600;margin-bottom:2px;">Da aluna</p><p id="preco-aluna-label" style="font-size:11px;color:var(--text2)">—</p></button>
+      </div>
+    </div>
+    <div id="argila-valor-preview" style="background:var(--roxo-light);border-radius:var(--radius-sm);padding:7px 12px;display:none;justify-content:space-between;">
+      <span style="font-size:11px;color:var(--roxo);font-family:sans-serif;">valor calculado</span>
+      <span id="argila-valor-calc" style="font-size:13px;font-weight:600;color:var(--roxo);font-family:sans-serif;">R$ 0,00</span>
+    </div>
+    <div class="form-group"><label>Data</label><input type="date" id="argila-data"></div>
+    <button class="btn-primary" onclick="salvarArgila()">Salvar registro</button>
+    <p class="section-label" style="margin-top:6px;">REGISTROS DESTE MÊS</p>
+    <div id="argila-lista" class="card" style="padding:0 14px;"></div>
+    <div id="argila-total-box" style="display:none;text-align:right;padding:4px 2px;"><span style="font-size:12px;color:var(--text2);font-family:sans-serif;">total: </span><span id="argila-total" style="font-size:14px;font-weight:600;color:var(--roxo);font-family:sans-serif;"></span></div>
+  </div>
+  <div class="safe-bottom"></div>
+</div>
+
+<!-- QUEIMA -->
+<div id="screen-queima" class="screen">
+  <div class="header">
+    <button class="btn-back" onclick="goTo('screen-aluna')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+    <div style="flex:1;"><div class="header-title">Queima de esmalte</div><div class="header-sub" id="queima-sub"></div></div>
+  </div>
+  <div class="content">
+    <div class="form-group"><label>Foto da peça</label>
+      <div class="foto-area" id="foto-area" onclick="document.getElementById('foto-input').click()">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect x="2" y="7" width="24" height="18" rx="3" stroke="#bbb" stroke-width="1.5"/><circle cx="14" cy="16" r="5" stroke="#bbb" stroke-width="1.5"/><path d="M10 7l2-3h4l2 3" stroke="#bbb" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span style="font-size:13px;color:var(--text3);font-family:sans-serif;">toque para fotografar</span>
+      </div>
+      <div class="foto-preview" id="foto-preview" style="display:none;">
+        <img id="foto-img" style="width:100%;height:130px;object-fit:cover;border-radius:var(--radius);">
+        <button onclick="removerFoto()" style="position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,0.5);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+      </div>
+      <input type="file" id="foto-input" accept="image/*" capture="environment" style="display:none;" onchange="carregarFoto(this)">
+    </div>
+    <div class="form-group"><label>Descrição da peça</label><input type="text" id="queima-desc" placeholder="ex: xícara com pires, vaso médio..."></div>
+    <div style="display:flex;align-items:flex-start;gap:10px;">
+      <div class="form-group" style="flex-shrink:0;"><label>Qtd.</label>
+        <div class="qtd-control">
+          <button class="qtd-btn" onclick="alterarQtd('queima',-1)">−</button>
+          <div class="qtd-val" id="queima-qtd-val">1</div>
+          <button class="qtd-btn" onclick="alterarQtd('queima',1)">+</button>
+        </div>
+      </div>
+      <div class="form-group" style="flex:1;"><label>Valor unitário</label>
+        <div style="position:relative;"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text2);font-family:sans-serif;">R$</span><input type="number" id="queima-valor" placeholder="0,00" min="0" step="0.01" oninput="calcTotal('queima')" style="padding-left:32px;font-size:16px;font-weight:600;"></div>
+        <div style="background:var(--roxo-light);border-radius:var(--radius-sm);padding:6px 10px;display:flex;justify-content:space-between;"><span style="font-size:11px;color:var(--roxo);font-family:sans-serif;">total</span><span id="queima-total" style="font-size:13px;font-weight:600;color:var(--roxo);font-family:sans-serif;">R$ 0,00</span></div>
+      </div>
+    </div>
+    <div class="form-group"><label>Data</label><input type="date" id="queima-data"></div>
+    <button class="btn-primary" onclick="salvarQueima()">Salvar registro</button>
+    <p class="section-label" style="margin-top:6px;">REGISTROS DESTE MÊS</p>
+    <div id="queima-lista" class="card" style="padding:0 14px;"></div>
+  </div>
+  <div class="safe-bottom"></div>
+</div>
+
+<!-- PEÇAS -->
+<div id="screen-pecas" class="screen">
+  <div class="header">
+    <button class="btn-back" onclick="goTo('screen-aluna')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+    <div style="flex:1;"><div class="header-title">Peças do ateliê</div><div class="header-sub" id="pecas-sub"></div></div>
+  </div>
+  <div class="content">
+    <div class="form-group"><label>Descrição da peça</label><input type="text" id="pecas-desc" placeholder="ex: bowl grande, caneca, prato..."></div>
+    <div style="display:flex;align-items:flex-start;gap:10px;">
+      <div class="form-group" style="flex-shrink:0;"><label>Qtd.</label>
+        <div class="qtd-control">
+          <button class="qtd-btn" onclick="alterarQtd('pecas',-1)">−</button>
+          <div class="qtd-val" id="pecas-qtd-val">1</div>
+          <button class="qtd-btn" onclick="alterarQtd('pecas',1)">+</button>
+        </div>
+      </div>
+      <div class="form-group" style="flex:1;"><label>Valor unitário</label>
+        <div style="position:relative;"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text2);font-family:sans-serif;">R$</span><input type="number" id="pecas-valor" placeholder="0,00" min="0" step="0.01" oninput="calcTotal('pecas')" style="padding-left:32px;font-size:16px;font-weight:600;"></div>
+        <div style="background:var(--verde-light);border-radius:var(--radius-sm);padding:6px 10px;display:flex;justify-content:space-between;"><span style="font-size:11px;color:var(--verde);font-family:sans-serif;">total</span><span id="pecas-total" style="font-size:13px;font-weight:600;color:var(--verde);font-family:sans-serif;">R$ 0,00</span></div>
+      </div>
+    </div>
+    <div class="form-group"><label>Data</label><input type="date" id="pecas-data"></div>
+    <button class="btn-primary" onclick="salvarPeca()">Salvar registro</button>
+    <p class="section-label" style="margin-top:6px;">REGISTROS DESTE MÊS</p>
+    <div id="pecas-lista" class="card" style="padding:0 14px;"></div>
+  </div>
+  <div class="safe-bottom"></div>
+</div>
+
+<!-- FICHA -->
+<div id="screen-ficha" class="screen">
+  <div class="header" style="flex-direction:column;align-items:flex-start;padding-bottom:16px;">
+    <div style="display:flex;align-items:center;gap:12px;width:100%;">
+      <button class="btn-back" onclick="goTo('screen-aluna')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+      <span style="color:rgba(255,255,255,0.6);font-size:11px;font-family:sans-serif;letter-spacing:0.06em;">FICHA MENSAL</span>
+    </div>
+    <div style="padding:10px 0 0 0;">
+      <div id="ficha-nome-header" style="color:white;font-size:22px;font-family:Georgia,serif;letter-spacing:0.02em;"></div>
+      <div id="ficha-mes-header" style="color:rgba(255,255,255,0.7);font-size:14px;font-family:sans-serif;margin-top:3px;"></div>
+    </div>
+  </div>
+  <div class="content" id="ficha-content"></div>
+  <div style="padding:0 16px 16px;">
+    <button class="btn-outline" onclick="compartilharFicha()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 9v4a1 1 0 01-1 1H4a1 1 0 01-1-1V9" stroke="var(--roxo)" stroke-width="1.3" stroke-linecap="round"/><path d="M8 2v8M5 5l3-3 3 3" stroke="var(--roxo)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Gerar imagem para WhatsApp
+    </button>
+  </div>
+  <div class="safe-bottom"></div>
+</div>
+
+<!-- RELATÓRIO -->
+<div id="screen-relatorio" class="screen">
+  <div class="header">
+    <button class="btn-back" onclick="goTo('screen-home')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+    <div style="flex:1;text-align:center;"><div class="header-title">Relatório mensal</div><div class="header-sub" id="rel-mes"></div></div>
+    <div style="width:34px;"></div>
+  </div>
+  <div class="content">
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">TOTAL DO MÊS</div><div class="stat-val" id="rel-total">R$ 0</div></div>
+      <div class="stat-card"><div class="stat-label">RECEBIDO</div><div class="stat-val" id="rel-recebido" style="color:var(--verde);">R$ 0</div></div>
+    </div>
+    <div class="card" style="overflow-x:auto;">
+      <table class="rel-table">
+        <thead><tr><th>ALUNA</th><th style="text-align:right;">VALOR</th><th style="text-align:center;">FICHA</th><th style="text-align:center;">PGTO</th></tr></thead>
+        <tbody id="rel-body"></tbody>
+        <tfoot><tr>
+          <td style="font-family:sans-serif;color:var(--text2);">Total</td>
+          <td id="rel-total-tab" style="text-align:right;color:var(--roxo);font-family:sans-serif;"></td>
+          <td></td>
+          <td id="rel-pago-tab" style="text-align:center;color:var(--verde);font-family:sans-serif;font-size:11px;"></td>
+        </tr></tfoot>
+      </table>
+    </div>
+    <button class="btn-outline" onclick="exportarExcel()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="2" stroke="var(--roxo)" stroke-width="1.3"/><path d="M5 5h6M5 8h6M5 11h4" stroke="var(--roxo)" stroke-width="1.3" stroke-linecap="round"/><path d="M13 9v4a1 1 0 01-1 1H4a1 1 0 01-1-1V9" stroke="var(--roxo)" stroke-width="1.3" stroke-linecap="round"/><path d="M10 7v2M10 7l-1.5-1.5M10 7l1.5-1.5" stroke="var(--roxo)" stroke-width="1.2" stroke-linecap="round"/></svg>
+      Exportar planilha do mês
+    </button>
+  </div>
+  <div class="safe-bottom"></div>
+</div>
+
+<!-- CONFIG -->
+<div id="screen-config" class="screen">
+  <div class="header">
+    <button class="btn-back" onclick="goTo('screen-home')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+    <div style="flex:1;"><div class="header-title">Configurações</div></div>
+  </div>
+  <div class="content">
+    <p class="section-label">PREÇOS DE ARGILA (por kg)</p>
+    <div class="card">
+      <div style="padding:12px 14px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <div><p style="font-size:14px;font-weight:600;font-family:sans-serif;color:var(--text);">Argila do ateliê</p><p style="font-size:11px;color:var(--text2);font-family:sans-serif;">R$ por kg</p></div>
+        <div style="position:relative;width:100px;"><span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text2);font-family:sans-serif;">R$</span><input type="number" id="config-preco-atelie" placeholder="0,00" step="0.01" min="0" oninput="salvarConfig()" style="padding-left:26px;font-size:14px;font-weight:600;text-align:right;background:white;"></div>
+      </div>
+      <div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;">
+        <div><p style="font-size:14px;font-weight:600;font-family:sans-serif;color:var(--text);">Argila da aluna</p><p style="font-size:11px;color:var(--text2);font-family:sans-serif;">R$ por kg</p></div>
+        <div style="position:relative;width:100px;"><span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text2);font-family:sans-serif;">R$</span><input type="number" id="config-preco-aluna" placeholder="0,00" step="0.01" min="0" oninput="salvarConfig()" style="padding-left:26px;font-size:14px;font-weight:600;text-align:right;background:white;"></div>
+      </div>
+    </div>
+    <p class="section-label">MENSALIDADE PADRÃO</p>
+    <div class="card">
+      <div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;">
+        <div><p style="font-size:14px;font-weight:600;font-family:sans-serif;color:var(--text);">Valor padrão</p><p style="font-size:11px;color:var(--text2);font-family:sans-serif;">pode ser sobrescrito por aluna</p></div>
+        <div style="position:relative;width:100px;"><span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text2);font-family:sans-serif;">R$</span><input type="number" id="config-mensalidade" placeholder="0,00" step="0.01" min="0" oninput="salvarConfig()" style="padding-left:26px;font-size:14px;font-weight:600;text-align:right;background:white;"></div>
+      </div>
+    </div>
+    <p class="section-label">MÊS DE REFERÊNCIA</p>
+    <div class="card">
+      <div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;">
+        <div><p style="font-size:14px;font-weight:600;font-family:sans-serif;color:var(--text);">Mês ativo</p><p style="font-size:11px;color:var(--text2);font-family:sans-serif;">registros e fichas</p></div>
+        <input type="month" id="config-mes" oninput="salvarConfig();renderScrollMeses()" style="font-size:13px;padding:6px 10px;background:white;width:auto;">
+      </div>
+    </div>
+    <p class="section-label">BACKUP E RESTAURAÇÃO</p>
+    <div class="card">
+      <div style="padding:12px 14px;border-bottom:0.5px solid var(--border);">
+        <p style="font-size:14px;font-weight:600;font-family:sans-serif;color:var(--text);margin-bottom:3px;">Exportar backup</p>
+        <p style="font-size:11px;color:var(--text2);font-family:sans-serif;margin-bottom:10px;">Salva todos os dados — alunas, registros, fichas — num arquivo. Guarde no iCloud, e-mail ou WhatsApp.</p>
+        <button onclick="exportarBackup()" style="width:100%;padding:11px;background:var(--roxo);color:white;border:none;border-radius:var(--radius-sm);font-size:14px;font-family:sans-serif;cursor:pointer;">
+          Exportar backup
+        </button>
+      </div>
+      <div style="padding:12px 14px;">
+        <p style="font-size:14px;font-weight:600;font-family:sans-serif;color:var(--text);margin-bottom:3px;">Restaurar backup</p>
+        <p style="font-size:11px;color:var(--text2);font-family:sans-serif;margin-bottom:10px;">Selecione o arquivo de backup para restaurar. <span style="color:var(--laranja);font-weight:600;">Atenção: substitui todos os dados atuais.</span></p>
+        <button onclick="document.getElementById('backup-input').click()" style="width:100%;padding:11px;background:var(--bg);color:var(--roxo);border:1.5px solid var(--roxo);border-radius:var(--radius-sm);font-size:14px;font-family:sans-serif;cursor:pointer;">
+          Importar backup
+        </button>
+        <input type="file" id="backup-input" accept=".json" style="display:none;" onchange="importarBackup(this)">
+      </div>
+    </div>
+  </div>
+  <div class="safe-bottom"></div>
+</div>
+
+<!-- CADASTRO -->
+<div id="screen-cadastro" class="screen">
+  <div class="header">
+    <button class="btn-back" id="cad-back-btn" onclick="goTo('screen-alunas-lista')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+    <div style="flex:1;"><div class="header-title" id="cad-titulo">Cadastro</div></div>
+  </div>
+  <div class="content">
+    <div style="display:flex;justify-content:center;margin-bottom:4px;"><div class="avatar" style="width:64px;height:64px;font-size:20px;" id="cad-avatar-preview">?</div></div>
+    <p class="section-label">DADOS PESSOAIS</p>
+    <div class="form-group"><label>Nome completo</label><input type="text" id="cad-nome" placeholder="nome da aluna" oninput="atualizarAvatarPreview()"></div>
+    <div class="form-group"><label>CPF</label><input type="text" id="cad-cpf" placeholder="000.000.000-00" maxlength="14"></div>
+    <div class="form-group"><label>Celular</label><input type="tel" id="cad-celular" placeholder="(11) 99999-9999"></div>
+    <div class="form-group"><label>E-mail</label><input type="email" id="cad-email" placeholder="email@exemplo.com"></div>
+    <p class="section-label">ENDEREÇO</p>
+    <div class="form-group"><label>CEP</label><input type="text" id="cad-cep" placeholder="00000-000" maxlength="9"></div>
+    <div class="form-group"><label>Logradouro</label><input type="text" id="cad-logradouro" placeholder="rua, avenida..."></div>
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:8px;">
+      <div class="form-group"><label>Número</label><input type="text" id="cad-numero" placeholder="nº"></div>
+      <div class="form-group"><label>Complemento</label><input type="text" id="cad-complemento" placeholder="apto, bloco..."></div>
+    </div>
+    <div class="form-group"><label>Bairro</label><input type="text" id="cad-bairro" placeholder="bairro"></div>
+    <p class="section-label">CURSO</p>
+    <div class="form-group"><label>Mensalidade (R$)</label><div style="position:relative;"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text2);font-family:sans-serif;">R$</span><input type="number" id="cad-mensalidade" placeholder="0,00" min="0" step="0.01" style="padding-left:32px;font-size:16px;font-weight:600;"></div></div>
+    <div class="form-group"><label>Data de início</label><input type="date" id="cad-inicio"></div>
+    <div class="form-group"><label>Status</label><div class="tipo-grid"><button class="tipo-btn active" id="status-ativa" onclick="selectStatus('ativa')">Ativa</button><button class="tipo-btn" id="status-inativa" onclick="selectStatus('inativa')">Inativa</button></div></div>
+    <div class="form-group"><label>Observações</label><textarea id="cad-obs" rows="3" placeholder="notas..."></textarea></div>
+    <button class="btn-primary" onclick="salvarCadastro()">Salvar cadastro</button>
+    <div class="safe-bottom"></div>
+  </div>
+</div>
+
+<!-- PAINEL -->
+<div id="overlay" onclick="fecharPainel()"></div>
+<div id="painel-alunas">
+  <div class="painel-handle"><div style="width:36px;height:4px;border-radius:2px;background:#ddd;"></div></div>
+  <div style="padding:0 16px 10px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+    <p style="font-size:15px;font-weight:600;font-family:sans-serif;color:var(--text);">Qual aluna?</p>
+    <button onclick="abrirCadastroNovo()" style="display:flex;align-items:center;gap:5px;background:var(--roxo-light);border:none;border-radius:var(--radius-sm);padding:6px 10px;cursor:pointer;"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="var(--roxo)" stroke-width="1.5" stroke-linecap="round"/></svg><span style="font-size:12px;color:var(--roxo);font-weight:600;font-family:sans-serif;">Nova aluna</span></button>
+  </div>
+  <div style="padding:0 16px 10px;flex-shrink:0;"><div class="search-bar"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4" stroke="#bbb" stroke-width="1.3"/><path d="M9.5 9.5l2.5 2.5" stroke="#bbb" stroke-width="1.3" stroke-linecap="round"/></svg><input type="text" placeholder="buscar..." oninput="filtrarAlunas(this.value)"></div></div>
+  <div class="painel-list" id="painel-list"></div>
+</div>
+
+<!-- MODAL EDIÇÃO -->
+<div id="edit-modal">
+  <div class="modal-box">
+    <p style="font-size:15px;font-weight:600;font-family:sans-serif;color:var(--text);" id="edit-modal-title">Editar registro</p>
+    <div class="form-group"><label>Descrição</label><input type="text" id="edit-desc"></div>
+    <div class="form-group"><label>Valor unitário (R$)</label><input type="number" id="edit-valor" step="0.01" min="0"></div>
+    <div class="form-group"><label>Data</label><input type="date" id="edit-data"></div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="fecharEditModal()" style="flex:1;padding:12px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);font-size:14px;font-family:sans-serif;cursor:pointer;">Cancelar</button>
+      <button onclick="salvarEdicao()" style="flex:1;padding:12px;background:var(--roxo);color:white;border:none;border-radius:var(--radius);font-size:14px;font-family:sans-serif;cursor:pointer;">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const ALUNAS_INICIAL = [
+  {id:1,nome:"Alessandra Almeida",cpf:"287.156.988-66",celular:"",email:"alessandra@vsarquitetura.com.br",logradouro:"Rua Pintassilgo 114 ap 251",cep:"",obs:"",mensalidade:0,status:"ativa"},
+  {id:2,nome:"Ana Carolina Faim",cpf:"456.605.238-97",celular:"",email:"",logradouro:"Rua Dr. Jose Cadido de Souza 311",cep:"04580-50",obs:"",mensalidade:0,status:"ativa"},
+  {id:3,nome:"Ana Elisa Flores da Cruz",cpf:"",celular:"",email:"anaelisaflores16@hotmail.com",logradouro:"Rua Hermano Ribeiro da Silva 155 ap.231",cep:"040080-80",obs:"",mensalidade:0,status:"ativa"},
+  {id:4,nome:"André Jun Yassuda / Ivan",cpf:"697.365.708-78",celular:"",email:"",logradouro:"Rua Prof Carolina Ribeiro 123 apto 152",cep:"04116-020",obs:"",mensalidade:0,status:"ativa"},
+  {id:5,nome:"Carla Themis Lagrotta Germano",cpf:"006.994.338-94",celular:"",email:"carlatlg@gmail.com",logradouro:"Rua Tatui 54 apto 3",cep:"01409-010",obs:"",mensalidade:0,status:"ativa"},
+  {id:6,nome:"Clara Polizeli",cpf:"213.757.328-89",celular:"",email:"clarapolizeli@gmail.com",logradouro:"Rua Caçununga 8",cep:"045080-60",obs:"",mensalidade:0,status:"ativa"},
+  {id:7,nome:"Conceicao de Maria Ferraz Varon",cpf:"375.927.937-68",celular:"",email:"conceicaovaron@gmail.com",logradouro:"Av dos Eucaliptos 217 apto 142",cep:"045170-50",obs:"",mensalidade:0,status:"ativa"},
+  {id:8,nome:"Ellea Lie Nakano Penteado",cpf:"205.332.978-50",celular:"",email:"ellealie@gmail.com",logradouro:"Rua Gabriele D'annuzio 710 apto 702B",cep:"04619-002",obs:"",mensalidade:0,status:"ativa"},
+  {id:9,nome:"Fernanda Rocha Machado Autran",cpf:"137.215.137-03",celular:"",email:"",logradouro:"Rua Jesuino Arruda 122 apto 21c",cep:"04532-080",obs:"",mensalidade:0,status:"ativa"},
+  {id:10,nome:"Flavia Violante Ribeiro",cpf:"089.119.068-67",celular:"",email:"flaviavfonseca@gmail.com",logradouro:"Rua Embaixador Ribeiro Couto 40",cep:"04517-110",obs:"",mensalidade:0,status:"ativa"},
+  {id:11,nome:"Gabriela Saltorato",cpf:"217.033.238-31",celular:"",email:"gsaltoratto@gmail.com",logradouro:"Rua Pintassilgo 302 ap31",cep:"04514-031",obs:"",mensalidade:0,status:"ativa"},
+  {id:12,nome:"Ivany Kabbach",cpf:"012.612.838-30",celular:"",email:"ivanykabbach@terra.com.br",logradouro:"Rua Irauna 764",cep:"04518-060",obs:"",mensalidade:0,status:"ativa"},
+  {id:13,nome:"Juliana Malzoni Tavares Guerreiro",cpf:"353.939.888-00",celular:"",email:"malzoniju@gmail.com",logradouro:"Rua Baltazar da Veiga 130 Vila Nova Conceição",cep:"04510-000",obs:"",mensalidade:0,status:"ativa"},
+  {id:14,nome:"Junia Helena Ferreira Barros",cpf:"095.894.638-86",celular:"",email:"",logradouro:"Rua Verbo Divino 1061 apto 32A torre 3",cep:"04719-905",obs:"",mensalidade:0,status:"ativa"},
+  {id:15,nome:"Luisa Pepe Ribeiro Barbosa",cpf:"133.885.087-39",celular:"",email:"luizapr@gmail.com",logradouro:"Av Rouxinil 431 apto 114",cep:"04516-000",obs:"",mensalidade:0,status:"ativa"},
+  {id:16,nome:"Luiza Pepe",cpf:"133.885.087-39",celular:"",email:"luizapr@gmail.com",logradouro:"Av Rouxinil 431 apto 114",cep:"04516-000",obs:"",mensalidade:0,status:"ativa"},
+  {id:17,nome:"Luiza Yokoyama",cpf:"341.251.948-07",celular:"",email:"luizayokoyama@gmail.com",logradouro:"Rua Ministro Luiz Galloti 322 apt 11a",cep:"",obs:"",mensalidade:0,status:"ativa"},
+  {id:18,nome:"Maria Clara Vargas Astrachan",cpf:"124.088.137-19",celular:"",email:"mcvargasvieira@gmail.com",logradouro:"Rua Andre Fernandes 205 apt12A",cep:"05436-020",obs:"",mensalidade:0,status:"ativa"},
+  {id:19,nome:"Marina Peixoto Bustamonte",cpf:"336.940.688-80",celular:"",email:"bustamante_marina@hotmail.com",logradouro:"Rua Irauna 629",cep:"04518-061",obs:"",mensalidade:0,status:"ativa"},
+  {id:20,nome:"Marina Pepe Ribeiro Barbosa",cpf:"115.827.977-90",celular:"",email:"",logradouro:"Rua Baltazar da Veiga 130 apto 61 Vila Nova Conceição",cep:"04510-000",obs:"",mensalidade:0,status:"ativa"},
+  {id:21,nome:"Nora Di Giulio de Gradicola",cpf:"037.962.208-43",celular:"",email:"noradi51@gmail.com",logradouro:"Av. Coté de Azur 644 Granja Viana Cotia",cep:"06708-715",obs:"",mensalidade:0,status:"ativa"},
+  {id:22,nome:"Renato Zilli",cpf:"001.574.259-83",celular:"",email:"",logradouro:"Al Jau 605",cep:"01420-000",obs:"",mensalidade:0,status:"ativa"},
+  {id:23,nome:"Samantha Sahihi de Macedo Basso",cpf:"282.873.378-52",celular:"",email:"sasmacedo@yahoo.com.br",logradouro:"Rua Passo da Pátria 855 apto 24 Bela Aliança",cep:"05085-000",obs:"",mensalidade:0,status:"ativa"},
+  {id:24,nome:"Sandra S Lopes",cpf:"110.967.778-27",celular:"",email:"sansev2@yahoo.com.br",logradouro:"Rua Arthur Prado 621",cep:"01322-000",obs:"",mensalidade:0,status:"ativa"},
+  {id:25,nome:"Santuza de Oliveira Martins",cpf:"338.353.318-25",celular:"",email:"",logradouro:"Rua Manuel Guedes 536 apto 91",cep:"04536-070",obs:"",mensalidade:0,status:"ativa"},
+  {id:26,nome:"Sidneia Bertocci",cpf:"006.738.418-80",celular:"",email:"",logradouro:"Rua Joel Jorge de Melo 587 Vila Mariana",cep:"04128-081",obs:"",mensalidade:0,status:"ativa"},
+  {id:27,nome:"Silvia Ferreira da Rocha Mello",cpf:"943.452.878-04",celular:"",email:"",logradouro:"Rua Zacarias de Goes 881 apto 81",cep:"04610-002",obs:"",mensalidade:0,status:"ativa"},
+  {id:28,nome:"Silvia Rocha Holanda Maia",cpf:"011.394.134-06",celular:"",email:"",logradouro:"Rua Tuim 663",cep:"04514-103",obs:"",mensalidade:0,status:"ativa"},
+  {id:29,nome:"Sonia Amaral",cpf:"765.715.218-49",celular:"",email:"4255.soniaamaral@bradesco.com.br",logradouro:"Rua Engenheiro Jorge Oliva 433 apto 91 Vila Mascote",cep:"04362-060",obs:"",mensalidade:0,status:"ativa"},
+  {id:30,nome:"Taciana Travassos Augusto Lima",cpf:"111.680.557-09",celular:"",email:"",logradouro:"Rua Afonso Braz 25 Apto 61 Vila Nova Conceição",cep:"04511-010",obs:"",mensalidade:0,status:"ativa"},
+  {id:31,nome:"Tiago Avelar",cpf:"341.330.538-77",celular:"",email:"thiagoavelar@hotmail.com",logradouro:"Rua da Consolação 3638 apto11",cep:"01416-906",obs:"",mensalidade:0,status:"ativa"},
+];
+
+function getDB() {
+  let s=null; try{const d=localStorage.getItem('maluDB');if(d)s=JSON.parse(d);}catch(e){}
+  if(!s){return{alunas:JSON.parse(JSON.stringify(ALUNAS_INICIAL)),registros:[],config:{precoAtelie:0,precoAluna:0,mensalidade:0,mes:hoje()},relStatus:{}};}
+  const ids=new Set(s.alunas.map(a=>a.id));
+  ALUNAS_INICIAL.forEach(a=>{if(!ids.has(a.id))s.alunas.push(JSON.parse(JSON.stringify(a)));});
+  s.alunas.sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+  return s;
+}
+function saveDB(db){
+  try{localStorage.setItem('maluDB',JSON.stringify(db));}
+  catch(e){
+    if(e.name==='QuotaExceededError'||e.code===22){
+      // Tenta remover fotos antigas para liberar espaço
+      let liberou=false;
+      for(let i=db.registros.length-1;i>=0;i--){
+        if(db.registros[i].foto&&db.registros[i].foto.length>10000){
+          db.registros[i].foto=null;liberou=true;break;
+        }
+      }
+      try{localStorage.setItem('maluDB',JSON.stringify(db));if(liberou)toast('⚠️ Espaço cheio: foto removida para salvar');}
+      catch(e2){toast('❌ Erro: armazenamento cheio');}
+    }
+  }
+}
+function hoje(){return new Date().toISOString().split('T')[0];}
+function mesAtual(){return db.config.mes?db.config.mes.substring(0,7):hoje().substring(0,7);}
+function formatMes(ym){if(!ym)return'';const[y,m]=ym.split('-');return['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][parseInt(m)-1]+' '+y;}
+function siglas(n){const p=n.trim().split(' ').filter(x=>x.length>2);return p.length>=2?(p[0][0]+p[1][0]).toUpperCase():n.substring(0,2).toUpperCase();}
+function fmtData(d){if(!d)return'';const[y,m,dd]=d.split('-');return dd+'/'+m;}
+function fmtR(v){return'R$ '+(v||0).toFixed(2).replace('.',',');}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+
+let db=getDB(), alunaAtual=null, tipoArgilaAtual='atelie', qtdQueima=1, qtdPecas=1, qtdArgila=1, fotoBase64=null, fotoCarregando=false, editRegId=null, cadEditId=null;
+
+function goTo(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+  if(id==='screen-relatorio')renderRelatorio();
+  if(id==='screen-argila'){document.getElementById('argila-sub').textContent=(alunaAtual?.nome||'')+' · '+formatMes(mesAtual());renderArgilaLista();atualizarLabelsArgila();}
+  if(id==='screen-queima'){document.getElementById('queima-sub').textContent=(alunaAtual?.nome||'')+' · '+formatMes(mesAtual());renderQueimaLista();}
+  if(id==='screen-pecas'){document.getElementById('pecas-sub').textContent=(alunaAtual?.nome||'')+' · '+formatMes(mesAtual());renderPecasLista();}
+  if(id==='screen-alunas-lista')renderListaAlunas(db.alunas);
+}
+
+function renderScrollMeses(){
+  const el=document.getElementById('month-scroll');
+  const atual=mesAtual();
+  const meses=[];
+  const[ay,am]=atual.split('-').map(Number);
+  for(let i=-5;i<=1;i++){let m=am+i,y=ay;while(m<=0){m+=12;y--;}while(m>12){m-=12;y++;}meses.push(y+'-'+String(m).padStart(2,'0'));}
+  el.innerHTML=meses.map(ym=>`<button class="month-chip${ym===atual?' active':''}" onclick="selecionarMes('${ym}')">${formatMes(ym)}</button>`).join('');
+  setTimeout(()=>{const a=el.querySelector('.active');if(a)a.scrollIntoView({block:'nearest',inline:'center'});},50);
+}
+function selecionarMes(ym){db.config.mes=ym;saveDB(db);renderScrollMeses();if(document.getElementById('config-mes'))document.getElementById('config-mes').value=ym;}
+
+function abrirPainel(){renderPainel(db.alunas.filter(a=>a.status==='ativa'));document.getElementById('painel-alunas').classList.add('open');document.getElementById('overlay').style.display='block';}
+function fecharPainel(){document.getElementById('painel-alunas').classList.remove('open');document.getElementById('overlay').style.display='none';}
+function filtrarAlunas(v){renderPainel(db.alunas.filter(a=>a.status==='ativa'&&a.nome.toLowerCase().includes(v.toLowerCase())));}
+function renderPainel(lista){
+  document.getElementById('painel-list').innerHTML=lista.map(a=>`
+    <button class="aluna-item" onclick="selecionarAluna(${a.id})">
+      <div class="avatar">${siglas(a.nome)}</div>
+      <div style="flex:1;"><p style="font-size:14px;font-weight:600;font-family:sans-serif;color:var(--text);">${a.nome}</p></div>
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M4.5 3l4 4-4 4" stroke="#bbb" stroke-width="1.4" stroke-linecap="round"/></svg>
+    </button>`).join('');
+}
+function selecionarAluna(id){fecharPainel();alunaAtual=db.alunas.find(a=>a.id===id);document.getElementById('aluna-avatar-header').textContent=siglas(alunaAtual.nome);document.getElementById('aluna-nome-header').textContent=alunaAtual.nome;document.getElementById('aluna-mes-header').textContent=formatMes(mesAtual());goTo('screen-aluna');}
+
+function renderListaAlunas(lista){
+  document.getElementById('alunas-lista-content').innerHTML=lista.map(a=>`
+    <div style="display:flex;align-items:center;gap:10px;background:var(--card);border-radius:var(--radius);border:0.5px solid var(--border);padding:10px 14px;">
+      <div class="avatar" style="flex-shrink:0;">${siglas(a.nome)}</div>
+      <div style="flex:1;min-width:0;"><p style="font-size:14px;font-weight:600;font-family:sans-serif;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.nome}</p><p style="font-size:11px;color:var(--text2);font-family:sans-serif;">${a.status==='ativa'?'ativa':'inativa'}${a.mensalidade?` · R$ ${a.mensalidade.toFixed(2).replace('.',',')}`:''}</p></div>
+      <button class="icon-btn" onclick="editarAluna(${a.id})"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z" stroke="var(--text2)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>`).join('');
+}
+function filtrarListaAlunas(v){renderListaAlunas(db.alunas.filter(a=>a.nome.toLowerCase().includes(v.toLowerCase())));}
+function editarAluna(id){
+  cadEditId=id;
+  const a=db.alunas.find(x=>x.id===id);
+  document.getElementById('cad-titulo').textContent='Editar aluna';
+  ['nome','cpf','celular','email','cep','logradouro','numero','complemento','bairro','obs'].forEach(f=>{const el=document.getElementById('cad-'+f);if(el)el.value=a[f]||'';});
+  document.getElementById('cad-mensalidade').value=a.mensalidade||'';
+  document.getElementById('cad-inicio').value=a.inicio||hoje();
+  document.getElementById('cad-avatar-preview').textContent=siglas(a.nome);
+  selectStatus(a.status||'ativa');
+  goTo('screen-cadastro');
+}
+
+function selectTipo(t){tipoArgilaAtual=t;document.getElementById('tipo-atelie').className='tipo-btn'+(t==='atelie'?' active':'');document.getElementById('tipo-aluna').className='tipo-btn'+(t==='aluna'?' active':'');calcArgilaValor();}
+function calcArgilaValor(){
+  const peso=parseFloat(document.getElementById('argila-peso').value)||0;
+  const preco=tipoArgilaAtual==='atelie'?(db.config.precoAtelie||0):(db.config.precoAluna||0);
+  const val=peso*qtdArgila*preco;
+  const box=document.getElementById('argila-valor-preview');
+  if(val>0){box.style.display='flex';document.getElementById('argila-valor-calc').textContent=fmtR(val);}else{box.style.display='none';}
+}
+function salvarArgila(){
+  const desc=document.getElementById('argila-desc').value.trim();
+  const peso=parseFloat(document.getElementById('argila-peso').value);
+  const data=document.getElementById('argila-data').value;
+  if(!desc||!peso||!data){toast('Preencha todos os campos');return;}
+  const preco=tipoArgilaAtual==='atelie'?(db.config.precoAtelie||0):(db.config.precoAluna||0);
+  db.registros.push({id:Date.now(),alunaId:alunaAtual.id,tipo:'argila',desc,peso,qtd:qtdArgila,tipoArgila:tipoArgilaAtual,preco,valor:+(peso*qtdArgila*preco).toFixed(2),data,mes:mesAtual()});
+  saveDB(db);
+  document.getElementById('argila-desc').value='';document.getElementById('argila-peso').value='';
+  qtdArgila=1;document.getElementById('argila-qtd-val').textContent='1';
+  document.getElementById('argila-valor-preview').style.display='none';
+  toast('Argila salva!');renderArgilaLista();
+}
+function renderArgilaLista(){
+  const lista=db.registros.filter(r=>r.alunaId===alunaAtual?.id&&r.tipo==='argila'&&r.mes===mesAtual());
+  const el=document.getElementById('argila-lista');
+  if(!lista.length){el.innerHTML='<p style="padding:12px 14px;font-size:13px;color:var(--text3);font-family:sans-serif;">nenhum registro ainda</p>';document.getElementById('argila-total-box').style.display='none';return;}
+  // Recalcula valor de registros que foram salvos sem preço configurado
+  let salvou=false;
+  lista.forEach(r=>{
+    if(r.valor===0&&r.preco===0){
+      const preco=r.tipoArgila==='atelie'?(db.config.precoAtelie||0):(db.config.precoAluna||0);
+      if(preco>0){r.preco=preco;r.valor=+(r.peso*(r.qtd||1)*preco).toFixed(2);salvou=true;}
+    }
+  });
+  if(salvou)saveDB(db);
+  el.innerHTML=lista.map(r=>`
+    <div class="reg-item">
+      <div style="flex:1;min-width:0;"><p style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--text);">${r.desc}</p><p style="font-size:11px;color:var(--text2);font-family:sans-serif;">${fmtData(r.data)} · ${r.tipoArgila==='atelie'?'do ateliê':'da aluna'} · ${(r.peso*(r.qtd||1)).toFixed(3)} kg</p></div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+        <span style="font-size:13px;color:var(--roxo);font-weight:600;font-family:sans-serif;">${r.valor>0?fmtR(r.valor):'—'}</span>
+        <button class="icon-btn" onclick="abrirEditModal(${r.id})"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M10 2l2 2L4 12H2v-2L10 2z" stroke="var(--text2)" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+        <button class="icon-btn" onclick="excluirReg(${r.id})"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 4h10M5 4V2h4v2M5.5 6.5v4M8.5 6.5v4M3 4l.8 7.2A1 1 0 004.8 12h4.4a1 1 0 001-.8L11 4" stroke="#D85A30" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+      </div>
+    </div>`).join('');
+  const tKg=lista.reduce((s,r)=>s+(r.peso*(r.qtd||1)),0);
+  const tVal=lista.reduce((s,r)=>s+r.valor,0);
+  const temValor=lista.some(r=>r.valor>0);
+  document.getElementById('argila-total').textContent=tKg.toFixed(3)+' kg'+(temValor?' · '+fmtR(tVal):'');
+  document.getElementById('argila-total-box').style.display='block';
+}
+
+function salvarQueima(){
+  const desc=document.getElementById('queima-desc').value.trim();
+  const valor=parseFloat(document.getElementById('queima-valor').value);
+  const data=document.getElementById('queima-data').value;
+  if(!desc||!valor||!data){toast('Preencha todos os campos');return;}
+  if(fotoCarregando){toast('Aguarde, foto ainda carregando...');setTimeout(()=>salvarQueima(),600);return;}
+  db.registros.push({id:Date.now(),alunaId:alunaAtual.id,tipo:'queima',desc,qtd:qtdQueima,valorUnit:valor,valor:+(qtdQueima*valor).toFixed(2),foto:fotoBase64,data,mes:mesAtual()});
+  saveDB(db);
+  document.getElementById('queima-desc').value='';document.getElementById('queima-valor').value='';document.getElementById('queima-total').textContent='R$ 0,00';
+  qtdQueima=1;document.getElementById('queima-qtd-val').textContent='1';removerFoto();toast('Queima salva!');renderQueimaLista();
+}
+function renderQueimaLista(){
+  const lista=db.registros.filter(r=>r.alunaId===alunaAtual?.id&&r.tipo==='queima'&&r.mes===mesAtual());
+  const el=document.getElementById('queima-lista');
+  if(!lista.length){el.innerHTML='<p style="padding:12px 14px;font-size:13px;color:var(--text3);font-family:sans-serif;">nenhum registro ainda</p>';return;}
+  el.innerHTML=lista.map(r=>`
+    <div class="reg-item" style="gap:8px;">
+      ${r.foto?`<img src="${r.foto}" style="width:40px;height:40px;border-radius:7px;object-fit:cover;flex-shrink:0;">`:`<div style="width:40px;height:40px;border-radius:7px;background:var(--laranja-light);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;">🔥</div>`}
+      <div style="flex:1;min-width:0;"><p style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--text);">${r.desc}</p><p style="font-size:11px;color:var(--text2);font-family:sans-serif;">${fmtData(r.data)} · ${r.qtd} un.</p></div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+        <span style="font-size:13px;color:var(--laranja);font-weight:600;font-family:sans-serif;">${fmtR(r.valor)}</span>
+        <button class="icon-btn" onclick="abrirEditModal(${r.id})"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M10 2l2 2L4 12H2v-2L10 2z" stroke="var(--text2)" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+        <button class="icon-btn" onclick="excluirReg(${r.id})"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 4h10M5 4V2h4v2M5.5 6.5v4M8.5 6.5v4M3 4l.8 7.2A1 1 0 004.8 12h4.4a1 1 0 001-.8L11 4" stroke="#D85A30" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+      </div>
+    </div>`).join('');
+}
+
+function salvarPeca(){
+  const desc=document.getElementById('pecas-desc').value.trim();
+  const valor=parseFloat(document.getElementById('pecas-valor').value);
+  const data=document.getElementById('pecas-data').value;
+  if(!desc||!valor||!data){toast('Preencha todos os campos');return;}
+  db.registros.push({id:Date.now(),alunaId:alunaAtual.id,tipo:'peca',desc,qtd:qtdPecas,valorUnit:valor,valor:+(qtdPecas*valor).toFixed(2),data,mes:mesAtual()});
+  saveDB(db);
+  document.getElementById('pecas-desc').value='';document.getElementById('pecas-valor').value='';document.getElementById('pecas-total').textContent='R$ 0,00';
+  qtdPecas=1;document.getElementById('pecas-qtd-val').textContent='1';toast('Peça salva!');renderPecasLista();
+}
+function renderPecasLista(){
+  const lista=db.registros.filter(r=>r.alunaId===alunaAtual?.id&&r.tipo==='peca'&&r.mes===mesAtual());
+  const el=document.getElementById('pecas-lista');
+  if(!lista.length){el.innerHTML='<p style="padding:12px 14px;font-size:13px;color:var(--text3);font-family:sans-serif;">nenhum registro ainda</p>';return;}
+  el.innerHTML=lista.map(r=>`
+    <div class="reg-item">
+      <div style="flex:1;"><p style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--text);">${r.desc}</p><p style="font-size:11px;color:var(--text2);font-family:sans-serif;">${fmtData(r.data)} · ${r.qtd} un.</p></div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+        <span style="font-size:13px;color:var(--verde);font-weight:600;font-family:sans-serif;">${fmtR(r.valor)}</span>
+        <button class="icon-btn" onclick="abrirEditModal(${r.id})"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M10 2l2 2L4 12H2v-2L10 2z" stroke="var(--text2)" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+        <button class="icon-btn" onclick="excluirReg(${r.id})"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 4h10M5 4V2h4v2M5.5 6.5v4M8.5 6.5v4M3 4l.8 7.2A1 1 0 004.8 12h4.4a1 1 0 001-.8L11 4" stroke="#D85A30" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+      </div>
+    </div>`).join('');
+}
+
+function alterarQtd(ctx,d){
+  if(ctx==='queima'){qtdQueima=Math.max(1,qtdQueima+d);document.getElementById('queima-qtd-val').textContent=qtdQueima;calcTotal('queima');}
+  else if(ctx==='pecas'){qtdPecas=Math.max(1,qtdPecas+d);document.getElementById('pecas-qtd-val').textContent=qtdPecas;calcTotal('pecas');}
+  else{qtdArgila=Math.max(1,qtdArgila+d);document.getElementById('argila-qtd-val').textContent=qtdArgila;calcArgilaValor();}
+}
+function calcTotal(ctx){const v=parseFloat(document.getElementById(ctx+'-valor').value)||0;const q=ctx==='queima'?qtdQueima:qtdPecas;document.getElementById(ctx+'-total').textContent=fmtR(q*v);}
+
+function carregarFoto(input){
+  const f=input.files[0];if(!f)return;
+  fotoBase64=null;
+  fotoCarregando=true;
+  // Mostra preview imediato com original enquanto comprime
+  const reader=new FileReader();
+  reader.onload=e=>{
+    document.getElementById('foto-img').src=e.target.result;
+    document.getElementById('foto-area').style.display='none';
+    document.getElementById('foto-preview').style.display='flex';
+    // Comprime em background
+    const img=new Image();
+    img.onload=()=>{
+      const MAX=600;
+      let w=img.width,h=img.height;
+      if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      fotoBase64=c.toDataURL('image/jpeg',0.6);
+      fotoCarregando=false;
+      // Atualiza preview com versão comprimida
+      document.getElementById('foto-img').src=fotoBase64;
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(f);
+}
+function removerFoto(){fotoBase64=null;fotoCarregando=false;document.getElementById('foto-area').style.display='flex';document.getElementById('foto-preview').style.display='none';document.getElementById('foto-input').value='';}
+
+function abrirEditModal(id){
+  editRegId=id;const r=db.registros.find(x=>x.id===id);if(!r)return;
+  const labels={argila:'Editar argila',queima:'Editar queima',peca:'Editar peça'};
+  document.getElementById('edit-modal-title').textContent=labels[r.tipo]||'Editar';
+  document.getElementById('edit-desc').value=r.desc||'';
+  document.getElementById('edit-valor').value=r.valorUnit||r.valor||'';
+  document.getElementById('edit-data').value=r.data||'';
+  document.getElementById('edit-modal').classList.add('open');
+}
+function fecharEditModal(){document.getElementById('edit-modal').classList.remove('open');editRegId=null;}
+function salvarEdicao(){
+  const r=db.registros.find(x=>x.id===editRegId);if(!r)return;
+  r.desc=document.getElementById('edit-desc').value.trim();
+  const v=parseFloat(document.getElementById('edit-valor').value)||0;
+  r.valorUnit=v;r.valor=+(v*(r.qtd||1)).toFixed(2);
+  if(r.tipo==='argila'){r.preco=v;r.valor=+(r.peso*(r.qtd||1)*v).toFixed(2);}
+  r.data=document.getElementById('edit-data').value;r.mes=r.data.substring(0,7);
+  saveDB(db);fecharEditModal();toast('Atualizado!');renderArgilaLista();renderQueimaLista();renderPecasLista();
+}
+function excluirReg(id){
+  if(!confirm('Excluir este registro?'))return;
+  db.registros=db.registros.filter(r=>r.id!==id);saveDB(db);toast('Excluído!');renderArgilaLista();renderQueimaLista();renderPecasLista();
+}
+
+function goFicha(){renderFicha();goTo('screen-ficha');}
+function calcTotalAluna(id,mes){
+  const regs=db.registros.filter(r=>r.alunaId===id&&r.mes===mes);
+  const a=db.alunas.find(a=>a.id===id);
+  return +((a?.mensalidade||db.config.mensalidade||0)+regs.reduce((s,r)=>s+r.valor,0)).toFixed(2);
+}
+function renderFicha(){
+  const mes=mesAtual(),a=alunaAtual;
+  document.getElementById('ficha-nome-header').textContent=a.nome;
+  document.getElementById('ficha-mes-header').textContent=formatMes(mes);
+  const regs=db.registros.filter(r=>r.alunaId===a.id&&r.mes===mes);
+  const mens=a.mensalidade||db.config.mensalidade||0;
+  const argilas=regs.filter(r=>r.tipo==='argila'),queimas=regs.filter(r=>r.tipo==='queima'),pecas=regs.filter(r=>r.tipo==='peca');
+  const tA=argilas.reduce((s,r)=>s+r.valor,0),tQ=queimas.reduce((s,r)=>s+r.valor,0),tP=pecas.reduce((s,r)=>s+r.valor,0);
+  const total=+(mens+tA+tQ+tP).toFixed(2);
+  let html=`<div class="ficha-section"><div class="ficha-section-header"><span style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--text);">Mensalidade</span><span style="font-size:13px;font-weight:600;font-family:sans-serif;">${fmtR(mens)}</span></div></div>`;
+  if(argilas.length){
+    const tKg=argilas.reduce((s,r)=>s+(r.peso*(r.qtd||1)),0);
+    html+=`<div class="ficha-section"><div class="ficha-section-header" style="background:var(--roxo-light);"><div style="display:flex;align-items:center;gap:7px;"><div style="width:7px;height:7px;border-radius:50%;background:var(--roxo-mid);"></div><span style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--roxo);">Argila</span></div><span style="font-size:12px;font-family:sans-serif;color:var(--roxo);">${tKg.toFixed(3)} kg</span></div>`;
+    argilas.forEach(r=>{html+=`<div class="ficha-item"><div style="flex:1;"><p style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--text);">${r.desc}</p><p style="font-size:11px;color:var(--text2);font-family:sans-serif;">${fmtData(r.data)} · ${r.tipoArgila==='atelie'?'do ateliê':'da aluna'} · ${(r.peso*(r.qtd||1)).toFixed(3)} kg</p></div><span style="font-size:13px;font-family:sans-serif;white-space:nowrap;">${r.valor>0?fmtR(r.valor):'—'}</span></div>`;});
+    html+=`<div style="padding:8px 14px;display:flex;justify-content:space-between;"><span style="font-size:12px;color:var(--text2);font-family:sans-serif;">subtotal argila</span><span style="font-size:13px;font-weight:600;color:var(--roxo);font-family:sans-serif;">${fmtR(tA)}</span></div></div>`;
+  }
+  if(queimas.length){
+    html+=`<div class="ficha-section"><div class="ficha-section-header" style="background:var(--laranja-light);"><div style="display:flex;align-items:center;gap:7px;"><div style="width:7px;height:7px;border-radius:50%;background:var(--laranja);"></div><span style="font-size:13px;font-weight:600;font-family:sans-serif;color:#993C1D;">Queima de esmalte</span></div><span style="font-size:12px;font-family:sans-serif;color:#993C1D;">${queimas.reduce((s,r)=>s+r.qtd,0)} peças</span></div>`;
+    queimas.forEach(r=>{html+=`<div class="ficha-item">${r.foto?`<img src="${r.foto}" style="width:40px;height:40px;border-radius:7px;object-fit:cover;flex-shrink:0;">`:`<div style="width:40px;height:40px;border-radius:7px;background:var(--laranja-light);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;">🔥</div>`}<div style="flex:1;"><p style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--text);">${r.desc}</p><p style="font-size:11px;color:var(--text2);font-family:sans-serif;">${fmtData(r.data)} · ${r.qtd} un.</p></div><span style="font-size:13px;font-family:sans-serif;white-space:nowrap;">${fmtR(r.valor)}</span></div>`;});
+    html+=`<div style="padding:8px 14px;display:flex;justify-content:space-between;"><span style="font-size:12px;color:var(--text2);font-family:sans-serif;">subtotal queima</span><span style="font-size:13px;font-weight:600;color:#993C1D;font-family:sans-serif;">${fmtR(tQ)}</span></div></div>`;
+  }
+  if(pecas.length){
+    html+=`<div class="ficha-section"><div class="ficha-section-header" style="background:var(--verde-light);"><div style="display:flex;align-items:center;gap:7px;"><div style="width:7px;height:7px;border-radius:50%;background:var(--verde);"></div><span style="font-size:13px;font-weight:600;font-family:sans-serif;color:#085041;">Peças do ateliê</span></div><span style="font-size:12px;font-family:sans-serif;color:#085041;">${pecas.reduce((s,r)=>s+r.qtd,0)} peças</span></div>`;
+    pecas.forEach(r=>{html+=`<div class="ficha-item"><div style="flex:1;"><p style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--text);">${r.desc}</p><p style="font-size:11px;color:var(--text2);font-family:sans-serif;">${fmtData(r.data)} · ${r.qtd} un.</p></div><span style="font-size:13px;font-family:sans-serif;white-space:nowrap;">${fmtR(r.valor)}</span></div>`;});
+    html+=`<div style="padding:8px 14px;display:flex;justify-content:space-between;"><span style="font-size:12px;color:var(--text2);font-family:sans-serif;">subtotal peças</span><span style="font-size:13px;font-weight:600;color:#085041;font-family:sans-serif;">${fmtR(tP)}</span></div></div>`;
+  }
+  html+=`<div class="total-bar"><p style="font-size:15px;">Total do mês</p><p style="font-size:20px;font-weight:600;">${fmtR(total)}</p></div>`;
+  document.getElementById('ficha-content').innerHTML=html;
+}
+
+async function compartilharFicha(){
+  if(!alunaAtual)return;
+  toast('Gerando imagem...');
+  const a=alunaAtual, mes=mesAtual();
+  const regs=db.registros.filter(r=>r.alunaId===a.id&&r.mes===mes);
+  const mens=a.mensalidade||db.config.mensalidade||0;
+  const argilas=regs.filter(r=>r.tipo==='argila'),queimas=regs.filter(r=>r.tipo==='queima'),pecas=regs.filter(r=>r.tipo==='peca');
+  const tA=argilas.reduce((s,r)=>s+r.valor,0),tQ=queimas.reduce((s,r)=>s+r.valor,0),tP=pecas.reduce((s,r)=>s+r.valor,0);
+  const total=+(mens+tA+tQ+tP).toFixed(2);
+
+  // Pré-carregar e recomprimir fotos se necessário
+  const fotoImgs={};
+  await Promise.all(queimas.filter(r=>r.foto).map(r=>new Promise(res=>{
+    const i=new Image();
+    i.onload=()=>{
+      // Se a foto for muito grande, recomprime para o canvas
+      try {
+        if(i.width>800||i.height>800){
+          const MAX=600;
+          let w=i.width,h=i.height;
+          if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}
+          const c=document.createElement('canvas');c.width=w;c.height=h;
+          c.getContext('2d').drawImage(i,0,0,w,h);
+          const comp=new Image();
+          comp.onload=()=>{fotoImgs[r.id]=comp;res();};
+          comp.onerror=()=>{fotoImgs[r.id]=i;res();};
+          comp.src=c.toDataURL('image/jpeg',0.7);
+        } else {
+          fotoImgs[r.id]=i; res();
+        }
+      } catch(e){ fotoImgs[r.id]=i; res(); }
+    };
+    i.onerror=()=>res();
+    setTimeout(()=>res(), 6000);
+    i.src=r.foto;
+  })));
+
+  // Montar linhas
+  const rows=[];
+  rows.push({type:'section_title',label:'Mensalidade',value:fmtR(mens)});
+  if(argilas.length){
+    const tKg=argilas.reduce((s,r)=>s+(r.peso*(r.qtd||1)),0);
+    rows.push({type:'cat_header',color:'#3C3489',bg:'#EEEDFE',label:'Argila',sub:tKg.toFixed(3)+' kg'});
+    argilas.forEach(r=>rows.push({type:'item',foto:null,label:r.desc,sub:fmtData(r.data)+' · '+(r.tipoArgila==='atelie'?'do ateliê':'da aluna')+' · '+(r.peso*(r.qtd||1)).toFixed(3)+' kg',value:r.valor>0?fmtR(r.valor):'—'}));
+    rows.push({type:'subtotal',color:'#3C3489',label:'subtotal argila',value:fmtR(tA)});
+  }
+  if(queimas.length){
+    rows.push({type:'cat_header',color:'#993C1D',bg:'#FAECE7',label:'Queima de esmalte',sub:queimas.reduce((s,r)=>s+r.qtd,0)+' peças'});
+    queimas.forEach(r=>rows.push({type:'item',foto:fotoImgs[r.id]||null,regId:r.id,label:r.desc,sub:fmtData(r.data)+' · '+r.qtd+' un.',value:fmtR(r.valor)}));
+    rows.push({type:'subtotal',color:'#993C1D',label:'subtotal queima',value:fmtR(tQ)});
+  }
+  if(pecas.length){
+    rows.push({type:'cat_header',color:'#085041',bg:'#E1F5EE',label:'Peças do ateliê',sub:pecas.reduce((s,r)=>s+r.qtd,0)+' peças'});
+    pecas.forEach(r=>rows.push({type:'item',foto:null,label:r.desc,sub:fmtData(r.data)+' · '+r.qtd+' un.',value:fmtR(r.valor)}));
+    rows.push({type:'subtotal',color:'#085041',label:'subtotal peças',value:fmtR(tP)});
+  }
+  rows.push({type:'total',value:fmtR(total)});
+
+  const W=390, PAD=20, FOTO_SZ=44, ITEM_H=54, ITEM_NO_FOTO_H=46, CAT_H=38, SUB_H=30, SECTION_H=44;
+  let H=110;
+  rows.forEach(r=>{
+    if(r.type==='section_title')H+=SECTION_H;
+    else if(r.type==='cat_header')H+=CAT_H;
+    else if(r.type==='item')H+=(r.foto?ITEM_H:ITEM_NO_FOTO_H);
+    else if(r.type==='subtotal')H+=SUB_H+8;
+    else if(r.type==='total')H+=60;
+  });
+  H+=PAD;
+
+  const scale=2;
+  const canvas=document.createElement('canvas');
+  canvas.width=W*scale; canvas.height=H*scale;
+  const ctx=canvas.getContext('2d');
+  ctx.scale(scale,scale);
+
+  // bg
+  ctx.fillStyle='#F5F4F0'; ctx.fillRect(0,0,W,H);
+
+  // header
+  ctx.fillStyle='#3C3489';
+  roundRect(ctx,0,0,W,105,0); ctx.fill();
+  ctx.fillStyle='white';
+  ctx.font='bold 10px sans-serif';
+  ctx.fillText('ATELIÊ MALU SERRA',PAD,24);
+  ctx.font='bold 19px Georgia,serif';
+  ctx.fillText(a.nome,PAD,52);
+  ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font='13px sans-serif';
+  ctx.fillText(formatMes(mes),PAD,72);
+
+  let y=115;
+
+  rows.forEach(r=>{
+    if(r.type==='section_title'){
+      ctx.fillStyle='white';
+      roundRect(ctx,PAD,y,W-PAD*2,SECTION_H-4,8); ctx.fill();
+      ctx.fillStyle='#1a1a1a'; ctx.font='600 14px sans-serif';
+      ctx.fillText(r.label,PAD+14,y+27);
+      const vw=ctx.measureText(r.value).width;
+      ctx.fillText(r.value,W-PAD-14-vw,y+27);
+      y+=SECTION_H;
+    }
+    else if(r.type==='cat_header'){
+      ctx.fillStyle=r.bg;
+      roundRect(ctx,PAD,y,W-PAD*2,CAT_H,8,true,false); ctx.fill();
+      ctx.fillStyle=r.color; ctx.font='bold 13px sans-serif';
+      ctx.fillText(r.label,PAD+12,y+24);
+      ctx.font='12px sans-serif';
+      const sw=ctx.measureText(r.sub).width;
+      ctx.fillText(r.sub,W-PAD-12-sw,y+24);
+      y+=CAT_H;
+    }
+    else if(r.type==='item'){
+      const IH=r.foto?ITEM_H:ITEM_NO_FOTO_H;
+      ctx.fillStyle='white'; ctx.fillRect(PAD,y,W-PAD*2,IH);
+      let textX=PAD+14;
+      if(r.foto){
+        // draw foto with rounded clip
+        const fx=PAD+14, fy=y+(IH-FOTO_SZ)/2, fr=6;
+        ctx.save();
+        ctx.beginPath();
+        roundRect(ctx,fx,fy,FOTO_SZ,FOTO_SZ,fr);
+        ctx.clip();
+        ctx.drawImage(r.foto,fx,fy,FOTO_SZ,FOTO_SZ);
+        ctx.restore();
+        textX=PAD+14+FOTO_SZ+10;
+      }
+      const midY=r.foto?(y+IH/2-5):(y+17);
+      ctx.fillStyle='#1a1a1a'; ctx.font='600 13px sans-serif';
+      ctx.fillText(r.label,textX,midY);
+      ctx.fillStyle='#666'; ctx.font='11px sans-serif';
+      ctx.fillText(r.sub,textX,midY+16);
+      ctx.fillStyle='#1a1a1a'; ctx.font='600 13px sans-serif';
+      const vw=ctx.measureText(r.value).width;
+      ctx.fillText(r.value,W-PAD-14-vw,midY);
+      ctx.strokeStyle='rgba(0,0,0,0.07)'; ctx.lineWidth=0.5;
+      ctx.beginPath(); ctx.moveTo(PAD+14,y+IH-0.5); ctx.lineTo(W-PAD-14,y+IH-0.5); ctx.stroke();
+      y+=IH;
+    }
+    else if(r.type==='subtotal'){
+      ctx.fillStyle='white';
+      roundRect(ctx,PAD,y,W-PAD*2,SUB_H,0,false,true); ctx.fill();
+      ctx.fillStyle='#888'; ctx.font='11px sans-serif';
+      ctx.fillText(r.label,PAD+14,y+19);
+      ctx.fillStyle=r.color; ctx.font='bold 13px sans-serif';
+      const vw=ctx.measureText(r.value).width;
+      ctx.fillText(r.value,W-PAD-14-vw,y+19);
+      y+=SUB_H+8;
+    }
+    else if(r.type==='total'){
+      ctx.fillStyle='#3C3489';
+      roundRect(ctx,PAD,y,W-PAD*2,50,10); ctx.fill();
+      ctx.fillStyle='white'; ctx.font='15px sans-serif';
+      ctx.fillText('Total do mês',PAD+16,y+30);
+      ctx.font='bold 20px sans-serif';
+      const vw=ctx.measureText(r.value).width;
+      ctx.fillText(r.value,W-PAD-16-vw,y+30);
+      y+=60;
+    }
+  });
+
+  const dataUrl=canvas.toDataURL('image/jpeg',0.92);
+  showImageOverlay(dataUrl,a);
+}
+
+function roundRect(ctx,x,y,w,h,r,topOnly,bottomOnly){
+  ctx.beginPath();
+  if(topOnly){ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h);ctx.lineTo(x,y+h);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);}
+  else if(bottomOnly){ctx.moveTo(x,y);ctx.lineTo(x+w,y);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y);}
+  else{ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);}
+  ctx.closePath();
+}
+
+async function showImageOverlay(dataUrl,aluna){
+  // Tenta compartilhamento nativo (iOS Share Sheet) — funciona direto no WhatsApp
+  if(navigator.share && navigator.canShare){
+    try{
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      const file = new File([blob], `ficha-${aluna.nome.split(' ')[0].toLowerCase()}.jpg`, {type:'image/jpeg'});
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({files:[file], title:'Ficha Ateliê Malu Serra'});
+        return; // sucesso — não precisa mostrar overlay
+      }
+    }catch(e){
+      if(e.name==='AbortError') return; // usuário cancelou — não mostra overlay
+      // fallback para overlay se der outro erro
+    }
+  }
+
+  // Fallback: overlay com imagem para salvar manualmente
+  const existing=document.getElementById('img-overlay');if(existing)existing.remove();
+  const ov=document.createElement('div');
+  ov.id='img-overlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;padding:24px 16px 40px;gap:12px;';
+  const title=document.createElement('p');
+  title.textContent='Pressione e segure para salvar';
+  title.style.cssText='color:white;font-size:14px;font-family:sans-serif;text-align:center;font-weight:600;';
+  const hint=document.createElement('p');
+  hint.textContent='Depois abra o WhatsApp e envie da galeria';
+  hint.style.cssText='color:rgba(255,255,255,0.55);font-size:12px;font-family:sans-serif;text-align:center;margin-top:-6px;';
+  const img=document.createElement('img');
+  img.src=dataUrl;
+  img.style.cssText='width:100%;max-width:390px;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
+  const btnClose=document.createElement('button');
+  btnClose.textContent='Fechar';
+  btnClose.style.cssText='width:100%;max-width:390px;padding:14px;background:rgba(255,255,255,0.12);color:white;border:none;border-radius:12px;font-size:15px;font-family:sans-serif;cursor:pointer;';
+  btnClose.onclick=()=>ov.remove();
+  ov.appendChild(title);ov.appendChild(hint);ov.appendChild(img);ov.appendChild(btnClose);
+  document.body.appendChild(ov);
+}
+
+function renderRelatorio(){
+  const mes=mesAtual();
+  document.getElementById('rel-mes').textContent=formatMes(mes);
+  const alunas=db.alunas.filter(a=>a.status==='ativa');
+  let tGeral=0,tRecebido=0;
+  document.getElementById('rel-body').innerHTML=alunas.map(a=>{
+    const total=calcTotalAluna(a.id,mes);tGeral+=total;
+    const key=`${a.id}-${mes}`;const st=db.relStatus[key]||{ficha:'pendente',pago:false};
+    if(st.pago)tRecebido+=total;
+    const fb=st.ficha==='enviada'?`<span class="badge badge-green">enviada</span>`:`<span class="badge badge-amber">pendente</span>`;
+    const pb=`<button onclick="togglePgto(${a.id})" style="font-size:10px;padding:3px 7px;border-radius:10px;border:none;cursor:pointer;${st.pago?'background:var(--verde-light);color:#085041;':'background:var(--amber-light);color:#633806;'}">${st.pago?'pago':'pendente'}</button>`;
+    return`<tr><td><p style="font-size:12px;font-weight:600;font-family:sans-serif;color:var(--text);margin:0;">${a.nome.split(' ')[0]} ${a.nome.split(' ')[1]||''}</p></td><td style="text-align:right;font-weight:600;font-family:sans-serif;font-size:12px;">${fmtR(total)}</td><td style="text-align:center;">${fb}</td><td style="text-align:center;">${pb}</td></tr>`;
+  }).join('');
+  document.getElementById('rel-total').textContent=fmtR(tGeral);
+  document.getElementById('rel-recebido').textContent=fmtR(tRecebido);
+  document.getElementById('rel-total-tab').textContent=fmtR(tGeral);
+  document.getElementById('rel-pago-tab').textContent=fmtR(tRecebido);
+}
+function togglePgto(id){const k=`${id}-${mesAtual()}`;if(!db.relStatus[k])db.relStatus[k]={ficha:'pendente',pago:false};db.relStatus[k].pago=!db.relStatus[k].pago;saveDB(db);renderRelatorio();}
+
+function salvarConfig(){db.config.precoAtelie=parseFloat(document.getElementById('config-preco-atelie').value)||0;db.config.precoAluna=parseFloat(document.getElementById('config-preco-aluna').value)||0;db.config.mensalidade=parseFloat(document.getElementById('config-mensalidade').value)||0;db.config.mes=document.getElementById('config-mes').value||hoje();saveDB(db);atualizarLabelsArgila();}
+function carregarConfig(){document.getElementById('config-preco-atelie').value=db.config.precoAtelie||'';document.getElementById('config-preco-aluna').value=db.config.precoAluna||'';document.getElementById('config-mensalidade').value=db.config.mensalidade||'';document.getElementById('config-mes').value=db.config.mes||hoje().substring(0,7);}
+function atualizarLabelsArgila(){document.getElementById('preco-atelie-label').textContent=db.config.precoAtelie?`R$ ${db.config.precoAtelie}/kg`:'preço não definido';document.getElementById('preco-aluna-label').textContent=db.config.precoAluna?`R$ ${db.config.precoAluna}/kg`:'preço não definido';}
+
+function abrirCadastroNovo(){fecharPainel();cadEditId=null;document.getElementById('cad-titulo').textContent='Nova aluna';document.getElementById('cad-back-btn').onclick=()=>goTo('screen-home');['nome','cpf','celular','email','cep','logradouro','numero','complemento','bairro','mensalidade','obs'].forEach(f=>{const el=document.getElementById('cad-'+f);if(el)el.value='';});document.getElementById('cad-inicio').value=hoje();document.getElementById('cad-avatar-preview').textContent='?';selectStatus('ativa');goTo('screen-cadastro');}
+function atualizarAvatarPreview(){const n=document.getElementById('cad-nome').value;document.getElementById('cad-avatar-preview').textContent=n?siglas(n):'?';}
+function selectStatus(s){document.getElementById('status-ativa').className='tipo-btn'+(s==='ativa'?' active':'');document.getElementById('status-inativa').className='tipo-btn'+(s==='inativa'?' active':'');document.getElementById('status-ativa').dataset.sel=s==='ativa'?'1':'';}
+function salvarCadastro(){
+  const nome=document.getElementById('cad-nome').value.trim();if(!nome){toast('Informe o nome');return;}
+  const dados={nome,cpf:document.getElementById('cad-cpf').value.trim(),celular:document.getElementById('cad-celular').value.trim(),email:document.getElementById('cad-email').value.trim(),logradouro:document.getElementById('cad-logradouro').value.trim(),numero:document.getElementById('cad-numero').value.trim(),complemento:document.getElementById('cad-complemento').value.trim(),bairro:document.getElementById('cad-bairro').value.trim(),cep:document.getElementById('cad-cep').value.trim(),mensalidade:parseFloat(document.getElementById('cad-mensalidade').value)||0,inicio:document.getElementById('cad-inicio').value,obs:document.getElementById('cad-obs').value.trim(),status:document.getElementById('status-ativa').dataset.sel?'ativa':'inativa'};
+  if(cadEditId){const idx=db.alunas.findIndex(a=>a.id===cadEditId);if(idx>=0)db.alunas[idx]={...db.alunas[idx],...dados};toast('Cadastro atualizado!');}
+  else{dados.id=Date.now();db.alunas.push(dados);toast('Aluna cadastrada!');}
+  db.alunas.sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));saveDB(db);cadEditId=null;goTo('screen-alunas-lista');renderListaAlunas(db.alunas);
+}
+
+function exportarBackup(){
+  const dados=JSON.stringify(db,null,2);
+  const agora=new Date();
+  const stamp=agora.getFullYear()+'-'+String(agora.getMonth()+1).padStart(2,'0')+'-'+String(agora.getDate()).padStart(2,'0');
+  const fileName=`malu-atelie-backup-${stamp}.json`;
+  const blob=new Blob([dados],{type:'application/json'});
+  const file=new File([blob],fileName,{type:'application/json'});
+  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+    navigator.share({files:[file],title:'Backup Ateliê Malu Serra'}).catch(e=>{
+      if(e.name!=='AbortError')baixarArquivo(blob,fileName);
+    });
+  } else {
+    baixarArquivo(blob,fileName);
+  }
+}
+function baixarArquivo(blob,fileName){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=fileName;a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function importarBackup(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const dados=JSON.parse(e.target.result);
+      // Valida estrutura mínima
+      if(!dados.alunas||!dados.registros||!dados.config){toast('❌ Arquivo inválido');return;}
+      if(!confirm(`Restaurar backup com ${dados.alunas.length} alunas e ${dados.registros.length} registros?\n\nIsso substituirá todos os dados atuais.`))return;
+      localStorage.setItem('maluDB',JSON.stringify(dados));
+      db=getDB();
+      carregarConfig();
+      renderScrollMeses();
+      toast('✅ Backup restaurado com sucesso!');
+    }catch(err){toast('❌ Erro ao ler o arquivo');}
+    input.value='';
+  };
+  reader.readAsText(file);
+}
+
+function exportarExcel(){
+  const mes=mesAtual();
+  const alunas=db.alunas.filter(a=>a.status==='ativa');
+
+  // Monta CSV com separador ; (compatível com Excel Brasil)
+  const cabecalho=['Nome','CPF','Endereço','E-mail',`Valor ${formatMes(mes)}`,'Status Pgto'];
+  const linhas=[cabecalho];
+
+  alunas.forEach(a=>{
+    const total=calcTotalAluna(a.id,mes);
+    const key=`${a.id}-${mes}`;
+    const st=db.relStatus[key]||{pago:false};
+    const endereco=[a.logradouro,a.numero,a.complemento,a.bairro,a.cep].filter(Boolean).join(', ');
+    linhas.push([
+      a.nome,
+      a.cpf||'',
+      endereco||'',
+      a.email||'',
+      total.toFixed(2).replace('.',','),
+      st.pago?'Pago':'Pendente'
+    ]);
+  });
+
+  // Linha de total
+  linhas.push([]);
+  const totalGeral=alunas.reduce((s,a)=>s+calcTotalAluna(a.id,mes),0);
+  linhas.push(['TOTAL','','','',totalGeral.toFixed(2).replace('.',','),'']);
+
+  // Converte para string CSV
+  const csv='\uFEFF'+ // BOM para Excel reconhecer UTF-8
+    linhas.map(row=>row.map(cell=>`"${String(cell).replace(/"/g,'""')}"`).join(';')).join('\r\n');
+
+  // Cria arquivo e compartilha
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const fileName=`atelie-malu-serra-${mes}.csv`;
+  const file=new File([blob],fileName,{type:'text/csv'});
+
+  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+    navigator.share({files:[file],title:`Ateliê Malu Serra — ${formatMes(mes)}`}).catch(e=>{if(e.name!=='AbortError')baixarCSV(blob,fileName);});
+  } else {
+    baixarCSV(blob,fileName);
+  }
+}
+function baixarCSV(blob,fileName){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=fileName;a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+function init(){
+  const d=hoje();
+  document.getElementById('argila-data').value=d;document.getElementById('queima-data').value=d;document.getElementById('pecas-data').value=d;
+  carregarConfig();atualizarLabelsArgila();renderScrollMeses();
+}
+init();
+</script>
+</div>
+</body>
+</html>
