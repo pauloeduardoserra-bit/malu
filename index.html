@@ -615,11 +615,23 @@ function salvarQueima(){
   const valor=parseFloat(document.getElementById('queima-valor').value);
   const data=document.getElementById('queima-data').value;
   if(!desc||!valor||!data){toast('Preencha todos os campos');return;}
-  if(fotoCarregando){toast('Aguarde, foto ainda carregando...');setTimeout(()=>salvarQueima(),600);return;}
-  db.registros.push({id:Date.now(),alunaId:alunaAtual.id,tipo:'queima',desc,qtd:qtdQueima,valorUnit:valor,valor:+(qtdQueima*valor).toFixed(2),foto:fotoBase64,data,mes:mesAtual()});
+  if(fotoCarregando){
+    toast('⏳ Aguarde, processando foto...');
+    setTimeout(()=>salvarQueima(),800);
+    return;
+  }
+  db.registros.push({id:Date.now(),alunaId:alunaAtual.id,tipo:'queima',desc,qtd:qtdQueima,valorUnit:valor,valor:+(qtdQueima*valor).toFixed(2),foto:fotoBase64||null,data,mes:mesAtual()});
   saveDB(db);
-  document.getElementById('queima-desc').value='';document.getElementById('queima-valor').value='';document.getElementById('queima-total').textContent='R$ 0,00';
-  qtdQueima=1;document.getElementById('queima-qtd-val').textContent='1';removerFoto();toast('Queima salva!');renderQueimaLista();
+  // Verifica se foto foi salva corretamente
+  const salvo=db.registros[db.registros.length-1];
+  if(fotoBase64&&!salvo.foto){toast('⚠️ Foto não pôde ser salva — espaço cheio');}
+  else{toast('Queima salva!'+(fotoBase64?' 📷':''));}
+  document.getElementById('queima-desc').value='';
+  document.getElementById('queima-valor').value='';
+  document.getElementById('queima-total').textContent='R$ 0,00';
+  qtdQueima=1;document.getElementById('queima-qtd-val').textContent='1';
+  removerFoto();
+  renderQueimaLista();
 }
 function renderQueimaLista(){
   const lista=db.registros.filter(r=>r.alunaId===alunaAtual?.id&&r.tipo==='queima'&&r.mes===mesAtual());
@@ -670,33 +682,69 @@ function alterarQtd(ctx,d){
 function calcTotal(ctx){const v=parseFloat(document.getElementById(ctx+'-valor').value)||0;const q=ctx==='queima'?qtdQueima:qtdPecas;document.getElementById(ctx+'-total').textContent=fmtR(q*v);}
 
 function carregarFoto(input){
-  const f=input.files[0];if(!f)return;
-  fotoBase64=null;
-  fotoCarregando=true;
-  // Mostra preview imediato com original enquanto comprime
-  const reader=new FileReader();
-  reader.onload=e=>{
-    document.getElementById('foto-img').src=e.target.result;
-    document.getElementById('foto-area').style.display='none';
-    document.getElementById('foto-preview').style.display='flex';
-    // Comprime em background
-    const img=new Image();
-    img.onload=()=>{
-      const MAX=600;
-      let w=img.width,h=img.height;
-      if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
-      const c=document.createElement('canvas');c.width=w;c.height=h;
-      c.getContext('2d').drawImage(img,0,0,w,h);
-      fotoBase64=c.toDataURL('image/jpeg',0.6);
-      fotoCarregando=false;
-      // Atualiza preview com versão comprimida
-      document.getElementById('foto-img').src=fotoBase64;
-    };
-    img.src=e.target.result;
+  const f=input.files[0]; if(!f) return;
+  fotoBase64=null; fotoCarregando=true;
+
+  // Mostra indicador de carregamento
+  document.getElementById('foto-area').style.display='none';
+  document.getElementById('foto-preview').style.display='flex';
+  document.getElementById('foto-img').src='';
+  document.getElementById('foto-img').style.opacity='0.4';
+
+  // Usa createImageBitmap se disponível (mais rápido e confiável no iOS)
+  const url=URL.createObjectURL(f);
+  const img=new Image();
+  img.onload=()=>{
+    URL.revokeObjectURL(url);
+    // Comprime para máx 500px, qualidade 0.5 — garante tamanho pequeno
+    const MAX=500;
+    let w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
+    if(!w||!h){w=500;h=500;} // fallback se naturalWidth não disponível
+    if(w>MAX||h>MAX){
+      if(w>h){h=Math.round(h*MAX/w);w=MAX;}
+      else{w=Math.round(w*MAX/h);h=MAX;}
+    }
+    const c=document.createElement('canvas');
+    c.width=w; c.height=h;
+    const ctx=c.getContext('2d');
+    ctx.drawImage(img,0,0,w,h);
+    fotoBase64=c.toDataURL('image/jpeg',0.5);
+    fotoCarregando=false;
+    // Mostra preview comprimido
+    document.getElementById('foto-img').src=fotoBase64;
+    document.getElementById('foto-img').style.opacity='1';
   };
-  reader.readAsDataURL(f);
+  img.onerror=()=>{
+    URL.revokeObjectURL(url);
+    // Fallback: usa FileReader se objectURL falhou
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img2=new Image();
+      img2.onload=()=>{
+        const MAX=500;
+        let w=img2.width,h=img2.height;
+        if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+        const c=document.createElement('canvas');c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img2,0,0,w,h);
+        fotoBase64=c.toDataURL('image/jpeg',0.5);
+        fotoCarregando=false;
+        document.getElementById('foto-img').src=fotoBase64;
+        document.getElementById('foto-img').style.opacity='1';
+      };
+      img2.onerror=()=>{
+        // Último recurso: salva original sem comprimir
+        fotoBase64=e.target.result;
+        fotoCarregando=false;
+        document.getElementById('foto-img').src=fotoBase64;
+        document.getElementById('foto-img').style.opacity='1';
+      };
+      img2.src=e.target.result;
+    };
+    reader.readAsDataURL(f);
+  };
+  img.src=url;
 }
-function removerFoto(){fotoBase64=null;fotoCarregando=false;document.getElementById('foto-area').style.display='flex';document.getElementById('foto-preview').style.display='none';document.getElementById('foto-input').value='';}
+function removerFoto(){fotoBase64=null;fotoCarregando=false;document.getElementById('foto-area').style.display='flex';document.getElementById('foto-preview').style.display='none';document.getElementById('foto-img').style.opacity='1';document.getElementById('foto-input').value='';}
 
 function abrirEditModal(id){
   editRegId=id;const r=db.registros.find(x=>x.id===id);if(!r)return;
