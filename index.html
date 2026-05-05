@@ -548,7 +548,40 @@ function renderListaAlunas(lista){
     </div>`).join('');
 }
 function filtrarListaAlunas(v){renderListaAlunas(db.alunas.filter(a=>a.nome.toLowerCase().includes(v.toLowerCase())));}
-function editarAluna(id){
+function editarMensalidadeMes(){
+  const mes=mesAtual(), a=alunaAtual;
+  const atual=getMensalidade(a.id,mes);
+  const novo=prompt(`Mensalidade de ${a.nome.split(' ')[0]} em ${formatMes(mes)}:\nValor atual: R$ ${atual.toFixed(2).replace('.',',')}\n\nNovo valor (só para este mês):`, atual.toFixed(2).replace('.',','));
+  if(novo===null) return; // cancelou
+  const val=parseFloat(novo.replace(',','.'))||0;
+  setMensalidadeMes(a.id,mes,val);
+  renderFicha();
+  toast('Mensalidade atualizada só para '+formatMes(mes));
+}
+
+// ─── IndexedDB para fotos ────────────────────────────────────────────
+let fotoDB=null;
+function abrirFotoDB(){
+  return new Promise((res,rej)=>{
+    if(fotoDB){res(fotoDB);return;}
+    const req=indexedDB.open('maluFotos',1);
+    req.onupgradeneeded=e=>{e.target.result.createObjectStore('fotos');};
+    req.onsuccess=e=>{fotoDB=e.target.result;res(fotoDB);};
+    req.onerror=()=>rej('IndexedDB erro');
+  });
+}
+async function salvarFotoDB(id,base64){
+  try{const db=await abrirFotoDB();return new Promise((res,rej)=>{const tx=db.transaction('fotos','readwrite');tx.objectStore('fotos').put(base64,id);tx.oncomplete=res;tx.onerror=rej;});}
+  catch(e){console.warn('IndexedDB indisponível, foto no localStorage');}
+}
+async function buscarFotoDB(id){
+  try{const db=await abrirFotoDB();return new Promise((res)=>{const tx=db.transaction('fotos','readonly');const req=tx.objectStore('fotos').get(id);req.onsuccess=()=>res(req.result||null);req.onerror=()=>res(null);});}
+  catch(e){return null;}
+}
+async function excluirFotoDB(id){
+  try{const db=await abrirFotoDB();return new Promise((res)=>{const tx=db.transaction('fotos','readwrite');tx.objectStore('fotos').delete(id);tx.oncomplete=res;tx.onerror=res;});}
+  catch(e){}
+}
   cadEditId=id;
   const a=db.alunas.find(x=>x.id===id);
   document.getElementById('cad-titulo').textContent='Editar aluna';
@@ -610,22 +643,18 @@ function renderArgilaLista(){
   document.getElementById('argila-total-box').style.display='block';
 }
 
-function salvarQueima(){
+async function salvarQueima(){
   const desc=document.getElementById('queima-desc').value.trim();
   const valor=parseFloat(document.getElementById('queima-valor').value);
   const data=document.getElementById('queima-data').value;
   if(!desc||!valor||!data){toast('Preencha todos os campos');return;}
-  if(fotoCarregando){
-    toast('⏳ Aguarde, processando foto...');
-    setTimeout(()=>salvarQueima(),800);
-    return;
-  }
-  db.registros.push({id:Date.now(),alunaId:alunaAtual.id,tipo:'queima',desc,qtd:qtdQueima,valorUnit:valor,valor:+(qtdQueima*valor).toFixed(2),foto:fotoBase64||null,data,mes:mesAtual()});
+  if(fotoCarregando){toast('⏳ Aguarde, processando foto...');setTimeout(()=>salvarQueima(),800);return;}
+  const id=Date.now();
+  // Salva foto no IndexedDB (sem ocupar localStorage)
+  if(fotoBase64) await salvarFotoDB(id, fotoBase64);
+  db.registros.push({id,alunaId:alunaAtual.id,tipo:'queima',desc,qtd:qtdQueima,valorUnit:valor,valor:+(qtdQueima*valor).toFixed(2),temFoto:!!fotoBase64,data,mes:mesAtual()});
   saveDB(db);
-  // Verifica se foto foi salva corretamente
-  const salvo=db.registros[db.registros.length-1];
-  if(fotoBase64&&!salvo.foto){toast('⚠️ Foto não pôde ser salva — espaço cheio');}
-  else{toast('Queima salva!'+(fotoBase64?' 📷':''));}
+  toast('Queima salva!'+(fotoBase64?' 📷':''));
   document.getElementById('queima-desc').value='';
   document.getElementById('queima-valor').value='';
   document.getElementById('queima-total').textContent='R$ 0,00';
@@ -633,20 +662,26 @@ function salvarQueima(){
   removerFoto();
   renderQueimaLista();
 }
-function renderQueimaLista(){
+async function renderQueimaLista(){
   const lista=db.registros.filter(r=>r.alunaId===alunaAtual?.id&&r.tipo==='queima'&&r.mes===mesAtual());
   const el=document.getElementById('queima-lista');
   if(!lista.length){el.innerHTML='<p style="padding:12px 14px;font-size:13px;color:var(--text3);font-family:sans-serif;">nenhum registro ainda</p>';return;}
-  el.innerHTML=lista.map(r=>`
-    <div class="reg-item" style="gap:8px;">
-      ${r.foto?`<img src="${r.foto}" style="width:40px;height:40px;border-radius:7px;object-fit:cover;flex-shrink:0;">`:`<div style="width:40px;height:40px;border-radius:7px;background:var(--laranja-light);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;">🔥</div>`}
+  // Carrega fotos do IndexedDB
+  const fotos={};
+  await Promise.all(lista.filter(r=>r.temFoto||r.foto).map(async r=>{
+    fotos[r.id]=await buscarFotoDB(r.id)||r.foto||null;
+  }));
+  el.innerHTML=lista.map(r=>{
+    const foto=fotos[r.id];
+    return`<div class="reg-item" style="gap:8px;">
+      ${foto?`<img src="${foto}" style="width:40px;height:40px;border-radius:7px;object-fit:cover;flex-shrink:0;">`:`<div style="width:40px;height:40px;border-radius:7px;background:var(--laranja-light);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;">${r.temFoto?'⏳':'🔥'}</div>`}
       <div style="flex:1;min-width:0;"><p style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--text);">${r.desc}</p><p style="font-size:11px;color:var(--text2);font-family:sans-serif;">${fmtData(r.data)} · ${r.qtd} un.</p></div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
         <span style="font-size:13px;color:var(--laranja);font-weight:600;font-family:sans-serif;">${fmtR(r.valor)}</span>
         <button class="icon-btn" onclick="abrirEditModal(${r.id})"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M10 2l2 2L4 12H2v-2L10 2z" stroke="var(--text2)" stroke-width="1.2" stroke-linecap="round"/></svg></button>
         <button class="icon-btn" onclick="excluirReg(${r.id})"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 4h10M5 4V2h4v2M5.5 6.5v4M8.5 6.5v4M3 4l.8 7.2A1 1 0 004.8 12h4.4a1 1 0 001-.8L11 4" stroke="#D85A30" stroke-width="1.2" stroke-linecap="round"/></svg></button>
       </div>
-    </div>`).join('');
+    </div>`;}).join('');
 }
 
 function salvarPeca(){
@@ -767,34 +802,61 @@ function salvarEdicao(){
 }
 function excluirReg(id){
   if(!confirm('Excluir este registro?'))return;
+  const r=db.registros.find(x=>x.id===id);
+  if(r&&(r.temFoto||r.foto)) excluirFotoDB(id);
   db.registros=db.registros.filter(r=>r.id!==id);saveDB(db);toast('Excluído!');renderArgilaLista();renderQueimaLista();renderPecasLista();
 }
 
-function goFicha(){renderFicha();goTo('screen-ficha');}
+async function goFicha(){await renderFicha();goTo('screen-ficha');}
+function getMensalidade(alunaId, mes){
+  const key=`${alunaId}-${mes}`;
+  const st=db.relStatus[key];
+  // Se foi definida mensalidade específica para este mês, usa ela
+  if(st&&st.mensalidade!==undefined) return st.mensalidade;
+  // Senão usa o valor padrão do cadastro da aluna
+  const a=db.alunas.find(a=>a.id===alunaId);
+  return a?.mensalidade||db.config.mensalidade||0;
+}
+function setMensalidadeMes(alunaId, mes, valor){
+  const key=`${alunaId}-${mes}`;
+  if(!db.relStatus[key]) db.relStatus[key]={ficha:'pendente',pago:false};
+  db.relStatus[key].mensalidade=valor;
+  saveDB(db);
+}
 function calcTotalAluna(id,mes){
   const regs=db.registros.filter(r=>r.alunaId===id&&r.mes===mes);
-  const a=db.alunas.find(a=>a.id===id);
-  return +((a?.mensalidade||db.config.mensalidade||0)+regs.reduce((s,r)=>s+r.valor,0)).toFixed(2);
+  return +(getMensalidade(id,mes)+regs.reduce((s,r)=>s+r.valor,0)).toFixed(2);
 }
-function renderFicha(){
+async function renderFicha(){
   const mes=mesAtual(),a=alunaAtual;
   document.getElementById('ficha-nome-header').textContent=a.nome;
   document.getElementById('ficha-mes-header').textContent=formatMes(mes);
   const regs=db.registros.filter(r=>r.alunaId===a.id&&r.mes===mes);
-  const mens=a.mensalidade||db.config.mensalidade||0;
+  const mens=getMensalidade(a.id,mes);
   const argilas=regs.filter(r=>r.tipo==='argila'),queimas=regs.filter(r=>r.tipo==='queima'),pecas=regs.filter(r=>r.tipo==='peca');
   const tA=argilas.reduce((s,r)=>s+r.valor,0),tQ=queimas.reduce((s,r)=>s+r.valor,0),tP=pecas.reduce((s,r)=>s+r.valor,0);
   const total=+(mens+tA+tQ+tP).toFixed(2);
-  let html=`<div class="ficha-section"><div class="ficha-section-header"><span style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--text);">Mensalidade</span><span style="font-size:13px;font-weight:600;font-family:sans-serif;">${fmtR(mens)}</span></div></div>`;
+  let html=`<div class="ficha-section"><div class="ficha-section-header">
+    <span style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--text);">Mensalidade</span>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:13px;font-weight:600;font-family:sans-serif;">${fmtR(mens)}</span>
+      <button onclick="editarMensalidadeMes()" style="background:var(--roxo-light);border:none;border-radius:6px;padding:3px 8px;font-size:11px;color:var(--roxo);font-family:sans-serif;cursor:pointer;">editar</button>
+    </div>
+  </div></div>`;
   if(argilas.length){
     const tKg=argilas.reduce((s,r)=>s+(r.peso*(r.qtd||1)),0);
     html+=`<div class="ficha-section"><div class="ficha-section-header" style="background:var(--roxo-light);"><div style="display:flex;align-items:center;gap:7px;"><div style="width:7px;height:7px;border-radius:50%;background:var(--roxo-mid);"></div><span style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--roxo);">Argila</span></div><span style="font-size:12px;font-family:sans-serif;color:var(--roxo);">${tKg.toFixed(3)} kg</span></div>`;
     argilas.forEach(r=>{html+=`<div class="ficha-item"><div style="flex:1;"><p style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--text);">${r.desc}</p><p style="font-size:11px;color:var(--text2);font-family:sans-serif;">${fmtData(r.data)} · ${r.tipoArgila==='atelie'?'do ateliê':'da aluna'} · ${(r.peso*(r.qtd||1)).toFixed(3)} kg</p></div><span style="font-size:13px;font-family:sans-serif;white-space:nowrap;">${r.valor>0?fmtR(r.valor):'—'}</span></div>`;});
     html+=`<div style="padding:8px 14px;display:flex;justify-content:space-between;"><span style="font-size:12px;color:var(--text2);font-family:sans-serif;">subtotal argila</span><span style="font-size:13px;font-weight:600;color:var(--roxo);font-family:sans-serif;">${fmtR(tA)}</span></div></div>`;
   }
+  // Carrega fotos das queimas do IndexedDB
+  const fotosQueima={};
+  await Promise.all(queimas.filter(r=>r.temFoto||r.foto).map(async r=>{
+    fotosQueima[r.id]=await buscarFotoDB(r.id)||r.foto||null;
+  }));
   if(queimas.length){
     html+=`<div class="ficha-section"><div class="ficha-section-header" style="background:var(--laranja-light);"><div style="display:flex;align-items:center;gap:7px;"><div style="width:7px;height:7px;border-radius:50%;background:var(--laranja);"></div><span style="font-size:13px;font-weight:600;font-family:sans-serif;color:#993C1D;">Queima de esmalte</span></div><span style="font-size:12px;font-family:sans-serif;color:#993C1D;">${queimas.reduce((s,r)=>s+r.qtd,0)} peças</span></div>`;
-    queimas.forEach(r=>{html+=`<div class="ficha-item">${r.foto?`<img src="${r.foto}" style="width:40px;height:40px;border-radius:7px;object-fit:cover;flex-shrink:0;">`:`<div style="width:40px;height:40px;border-radius:7px;background:var(--laranja-light);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;">🔥</div>`}<div style="flex:1;"><p style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--text);">${r.desc}</p><p style="font-size:11px;color:var(--text2);font-family:sans-serif;">${fmtData(r.data)} · ${r.qtd} un.</p></div><span style="font-size:13px;font-family:sans-serif;white-space:nowrap;">${fmtR(r.valor)}</span></div>`;});
+    queimas.forEach(r=>{const foto=fotosQueima[r.id];html+=`<div class="ficha-item">${foto?`<img src="${foto}" style="width:40px;height:40px;border-radius:7px;object-fit:cover;flex-shrink:0;">`:`<div style="width:40px;height:40px;border-radius:7px;background:var(--laranja-light);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;">🔥</div>`}<div style="flex:1;"><p style="font-size:13px;font-weight:600;font-family:sans-serif;color:var(--text);">${r.desc}</p><p style="font-size:11px;color:var(--text2);font-family:sans-serif;">${fmtData(r.data)} · ${r.qtd} un.</p></div><span style="font-size:13px;font-family:sans-serif;white-space:nowrap;">${fmtR(r.valor)}</span></div>`;});
     html+=`<div style="padding:8px 14px;display:flex;justify-content:space-between;"><span style="font-size:12px;color:var(--text2);font-family:sans-serif;">subtotal queima</span><span style="font-size:13px;font-weight:600;color:#993C1D;font-family:sans-serif;">${fmtR(tQ)}</span></div></div>`;
   }
   if(pecas.length){
@@ -811,37 +873,24 @@ async function compartilharFicha(){
   toast('Gerando imagem...');
   const a=alunaAtual, mes=mesAtual();
   const regs=db.registros.filter(r=>r.alunaId===a.id&&r.mes===mes);
-  const mens=a.mensalidade||db.config.mensalidade||0;
+  const mens=getMensalidade(a.id,mes);
   const argilas=regs.filter(r=>r.tipo==='argila'),queimas=regs.filter(r=>r.tipo==='queima'),pecas=regs.filter(r=>r.tipo==='peca');
   const tA=argilas.reduce((s,r)=>s+r.valor,0),tQ=queimas.reduce((s,r)=>s+r.valor,0),tP=pecas.reduce((s,r)=>s+r.valor,0);
   const total=+(mens+tA+tQ+tP).toFixed(2);
 
-  // Pré-carregar e recomprimir fotos se necessário
+  // Pré-carregar fotos do IndexedDB
   const fotoImgs={};
-  await Promise.all(queimas.filter(r=>r.foto).map(r=>new Promise(res=>{
-    const i=new Image();
-    i.onload=()=>{
-      // Se a foto for muito grande, recomprime para o canvas
-      try {
-        if(i.width>800||i.height>800){
-          const MAX=600;
-          let w=i.width,h=i.height;
-          if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}
-          const c=document.createElement('canvas');c.width=w;c.height=h;
-          c.getContext('2d').drawImage(i,0,0,w,h);
-          const comp=new Image();
-          comp.onload=()=>{fotoImgs[r.id]=comp;res();};
-          comp.onerror=()=>{fotoImgs[r.id]=i;res();};
-          comp.src=c.toDataURL('image/jpeg',0.7);
-        } else {
-          fotoImgs[r.id]=i; res();
-        }
-      } catch(e){ fotoImgs[r.id]=i; res(); }
-    };
-    i.onerror=()=>res();
-    setTimeout(()=>res(), 6000);
-    i.src=r.foto;
-  })));
+  await Promise.all(queimas.filter(r=>r.temFoto||r.foto).map(async r=>{
+    const base64=await buscarFotoDB(r.id)||r.foto||null;
+    if(!base64)return;
+    await new Promise(res=>{
+      const i=new Image();
+      i.onload=()=>{fotoImgs[r.id]=i;res();};
+      i.onerror=()=>res();
+      setTimeout(()=>res(),6000);
+      i.src=base64;
+    });
+  }));
 
   // Montar linhas
   const rows=[];
