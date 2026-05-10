@@ -398,7 +398,7 @@
     </div>
     <div class="form-group"><label>Bairro</label><input type="text" id="cad-bairro" placeholder="bairro"></div>
     <p class="section-label">CURSO</p>
-    <div class="form-group"><label>Mensalidade (R$)</label><div style="position:relative;"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text2);font-family:sans-serif;">R$</span><input type="number" id="cad-mensalidade" placeholder="0,00" min="0" step="0.01" style="padding-left:32px;font-size:16px;font-weight:600;"></div></div>
+    <div class="form-group"><label>Mensalidade individual (deixe em branco para usar o valor padrão das configurações)</label><div style="position:relative;"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text2);font-family:sans-serif;">R$</span><input type="number" id="cad-mensalidade" placeholder="valor padrão" min="0" step="0.01" style="padding-left:32px;font-size:16px;font-weight:600;"></div></div>
     <div class="form-group"><label>Data de início</label><input type="date" id="cad-inicio"></div>
     <div class="form-group"><label>Status</label><div class="tipo-grid"><button class="tipo-btn active" id="status-ativa" onclick="selectStatus('ativa')">Ativa</button><button class="tipo-btn" id="status-inativa" onclick="selectStatus('inativa')">Inativa</button></div></div>
     <div class="form-group"><label>Observações</label><textarea id="cad-obs" rows="3" placeholder="notas..."></textarea></div>
@@ -476,23 +476,27 @@ function getDB() {
   const ids=new Set(s.alunas.map(a=>a.id));
   ALUNAS_INICIAL.forEach(a=>{if(!ids.has(a.id))s.alunas.push(JSON.parse(JSON.stringify(a)));});
   s.alunas.sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+  // Marca registros com foto base64 ainda no localStorage para migração
+  s.registros.forEach(r=>{if(r.foto&&r.foto.length>100)r._migraPendente=true;});
   return s;
 }
-function saveDB(db){
-  try{localStorage.setItem('maluDB',JSON.stringify(db));}
-  catch(e){
-    if(e.name==='QuotaExceededError'||e.code===22){
-      // Tenta remover fotos antigas para liberar espaço
-      let liberou=false;
-      for(let i=db.registros.length-1;i>=0;i--){
-        if(db.registros[i].foto&&db.registros[i].foto.length>10000){
-          db.registros[i].foto=null;liberou=true;break;
-        }
-      }
-      try{localStorage.setItem('maluDB',JSON.stringify(db));if(liberou)toast('⚠️ Espaço cheio: foto removida para salvar');}
-      catch(e2){toast('❌ Erro: armazenamento cheio');}
+async function migrarFotos(){
+  let migrou=0;
+  for(const r of db.registros){
+    if(r._migraPendente&&r.foto){
+      await salvarFotoDB(r.id, r.foto);
+      r.temFoto=true; r.foto=null; r._migraPendente=false;
+      migrou++;
     }
   }
+  if(migrou>0){ saveDB(db); toast(`✅ ${migrou} foto(s) organizadas`); }
+}
+function saveDB(db){
+  // Remove fotos base64 do localStorage — fotos ficam só no IndexedDB
+  const dbLimpo=JSON.parse(JSON.stringify(db));
+  dbLimpo.registros.forEach(r=>{if(r.foto){r.temFoto=true;r.foto=null;}});
+  try{localStorage.setItem('maluDB',JSON.stringify(dbLimpo));}
+  catch(e){toast('❌ Erro ao salvar — exporte o backup agora');}
 }
 function hoje(){return new Date().toISOString().split('T')[0];}
 function mesAtual(){return db.config.mes?db.config.mes.substring(0,7):hoje().substring(0,7);}
@@ -811,11 +815,13 @@ async function goFicha(){await renderFicha();goTo('screen-ficha');}
 function getMensalidade(alunaId, mes){
   const key=`${alunaId}-${mes}`;
   const st=db.relStatus[key];
-  // Se foi definida mensalidade específica para este mês, usa ela
+  // 1. Override específico para este mês (editado na ficha)
   if(st&&st.mensalidade!==undefined) return st.mensalidade;
-  // Senão usa o valor padrão do cadastro da aluna
+  // 2. Mensalidade individual da aluna (cadastro) — só se explicitamente preenchida
   const a=db.alunas.find(a=>a.id===alunaId);
-  return a?.mensalidade||db.config.mensalidade||0;
+  if(a&&a.mensalidade>0) return a.mensalidade;
+  // 3. Valor padrão global das configurações
+  return db.config.mensalidade||0;
 }
 function setMensalidadeMes(alunaId, mes, valor){
   const key=`${alunaId}-${mes}`;
@@ -1193,8 +1199,12 @@ function baixarCSV(blob,fileName){
 
 function init(){
   const d=hoje();
-  document.getElementById('argila-data').value=d;document.getElementById('queima-data').value=d;document.getElementById('pecas-data').value=d;
+  document.getElementById('argila-data').value=d;
+  document.getElementById('queima-data').value=d;
+  document.getElementById('pecas-data').value=d;
   carregarConfig();atualizarLabelsArgila();renderScrollMeses();
+  // Migra fotos antigas do localStorage para IndexedDB em background
+  setTimeout(()=>migrarFotos(), 1500);
 }
 init();
 </script>
